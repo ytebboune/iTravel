@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model TravelProject {
+  id               String            @id @default(uuid())
+  title            String
+  description      String?
+  creatorId        String            @map("creator_id")
+  status           String            @default("draft")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  dateVotes        DateVote[]        @relation("ProjectDateVotes")
+  destinationVotes DestinationVote[] @relation("ProjectDestinationVotes")
+  activities       Activity[]        @relation("ProjectActivities")
+  dateSuggestions  DateSuggestion[]  @relation("ProjectDateSuggestions")
+  destinations     Destination[]     @relation("ProjectDestinations")
+  participants     ProjectUser[]     @relation("ProjectParticipants")
+
+  @@map("travel_projects")
+}
+
+model ProjectUser {
+  projectId String        @map("project_id")
+  userId    String        @map("user_id")
+  joinedAt  DateTime      @default(now()) @map("joined_at")
+  project   TravelProject @relation("ProjectParticipants", fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, userId])
+  @@map("travel_project_participants")
+}
+
+model Destination {
+  id            String            @id @default(uuid())
+  projectId     String            @map("project_id")
+  name          String
+  addedBy       String            @map("added_by")
+  suggestedByAI Boolean           @default(false) @map("suggested_by_ai")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+  votes         DestinationVote[] @relation("DestinationVotes")
+  project       TravelProject     @relation("ProjectDestinations", fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("travel_project_destinations")
+}
+
+model DestinationVote {
+  projectId     String        @map("project_id")
+  destinationId String        @map("destination_id")
+  userId        String        @map("user_id")
+  votedAt       DateTime      @default(now()) @map("voted_at")
+  destination   Destination   @relation("DestinationVotes", fields: [destinationId], references: [id], onDelete: Cascade)
+  project       TravelProject @relation("ProjectDestinationVotes", fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, destinationId, userId])
+  @@map("destination_votes")
+}
+
+model DateSuggestion {
+  id        String        @id @default(uuid())
+  projectId String        @map("project_id")
+  startDate DateTime      @map("start_date")
+  endDate   DateTime      @map("end_date")
+  addedBy   String        @map("added_by")
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+  votes     DateVote[]    @relation("DateVotes")
+  project   TravelProject @relation("ProjectDateSuggestions", fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("travel_project_dates")
+}
+
+model DateVote {
+  projectId String         @map("project_id")
+  dateId    String         @map("date_id")
+  userId    String         @map("user_id")
+  votedAt   DateTime       @default(now()) @map("voted_at")
+  date      DateSuggestion @relation("DateVotes", fields: [dateId], references: [id], onDelete: Cascade)
+  project   TravelProject  @relation("ProjectDateVotes", fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, dateId, userId])
+  @@map("date_votes")
+}
+
+model Activity {
+  id            String        @id @default(uuid())
+  projectId     String        @map("project_id")
+  title         String
+  description   String
+  imageUrl      String?       @map("image_url")
+  addedBy       String        @map("added_by")
+  suggestedByAI Boolean       @default(false) @map("suggested_by_ai")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  project       TravelProject @relation("ProjectActivities", fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("travel_project_activities")
+}
