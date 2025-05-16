@@ -1,162 +1,43 @@
-model TravelProject {
-  id          String   @id @default(uuid())
-  title       String
-  description String?
-  creatorId   String
-  shareCode   String   @unique // Code unique pour le partage
-  status      String   @default("DRAFT")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  creator     User     @relation("CreatedProjects", fields: [creatorId], references: [id])
-  participants ProjectUser[]
-  destinations Destination[]
-  dateSuggestions DateSuggestion[]
-  activities  Activity[]
-  accommodations Accommodation[]
-
-  @@index([creatorId])
-}
-
-model User {
-  id          String   @id @default(uuid())
-  email       String   @unique
-  name        String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  createdProjects TravelProject[] @relation("CreatedProjects")
-  projectParticipants ProjectUser[]
-  createdDestinations Destination[]
-  createdDateSuggestions DateSuggestion[]
-  createdActivities Activity[]
-  destinationVotes DestinationVote[]
-  dateVotes DateVote[]
-
-  @@index([email])
-}
-
-model ProjectUser {
-  id        String   @id @default(uuid())
-  projectId String
-  userId    String
-  joinedAt  DateTime @default(now())
-
-  // Relations
-  project   TravelProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([projectId, userId])
-  @@index([projectId])
-  @@index([userId])
-}
-
-model Destination {
-  id          String   @id @default(uuid())
-  projectId   String
-  name        String
-  addedBy     String
-  suggestedByAI Boolean @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  project     TravelProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  creator     User         @relation(fields: [addedBy], references: [id])
-  votes       DestinationVote[]
-
-  @@index([projectId])
-  @@index([addedBy])
-}
-
-model DestinationVote {
-  id          String   @id @default(uuid())
-  projectId   String
-  destinationId String
-  userId      String
-  createdAt   DateTime @default(now())
-
-  // Relations
-  project     TravelProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  destination Destination  @relation(fields: [destinationId], references: [id], onDelete: Cascade)
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([projectId, destinationId, userId])
-  @@index([projectId])
-  @@index([destinationId])
-  @@index([userId])
-}
-
-model DateSuggestion {
-  id          String   @id @default(uuid())
-  projectId   String
-  startDate   DateTime
-  endDate     DateTime
-  addedBy     String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  project     TravelProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  creator     User         @relation(fields: [addedBy], references: [id])
-  votes       DateVote[]
-
-  @@index([projectId])
-  @@index([addedBy])
-}
-
 model DateVote {
-  id          String   @id @default(uuid())
-  projectId   String
-  dateId      String
-  userId      String
-  createdAt   DateTime @default(now())
+  id        String         @id @default(uuid())
+  projectId String
+  dateId    String
+  userId    String
+  vote      Boolean
+  comment   String?
+  votedAt   DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
 
   // Relations
-  project     TravelProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  date        DateSuggestion @relation(fields: [dateId], references: [id], onDelete: Cascade)
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project   TravelProject  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  date      DateSuggestion @relation(fields: [dateId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, dateId, userId])
   @@index([projectId])
   @@index([dateId])
   @@index([userId])
+  @@map("date_votes")
 }
 
-model Activity {
-  id          String   @id @default(uuid())
-  projectId   String
-  title       String
-  description String?
-  imageUrl    String?
-  addedBy     String
-  suggestedByAI Boolean @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model DestinationVote {
+  id            String        @id @default(uuid())
+  projectId     String
+  destinationId String
+  userId        String
+  vote          Boolean
+  comment       String?
+  votedAt       DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   // Relations
-  project     TravelProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  creator     User         @relation(fields: [addedBy], references: [id])
+  project       TravelProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  destination   Destination   @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([projectId, destinationId, userId])
   @@index([projectId])
-  @@index([addedBy])
-}
-
-model Accommodation {
-  id          String   @id @default(uuid())
-  projectId   String
-  name        String
-  address     String
-  price       Float
-  link        String?
-  type        String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  project     TravelProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  @@index([projectId])
+  @@index([destinationId])
+  @@index([userId])
+  @@map("destination_votes")
 } 

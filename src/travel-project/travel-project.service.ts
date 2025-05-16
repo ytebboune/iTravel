@@ -224,7 +224,7 @@ export class TravelProjectService {
   ): Promise<void> {
     await this.findOneIfAuthorized(id, userId);
     await this.prisma.destinationVote.create({
-      data: { projectId: id, destinationId, userId },
+      data: { projectId: id, destinationId, userId, vote: true, comment: null },
     });
   }
 
@@ -260,7 +260,7 @@ export class TravelProjectService {
   ): Promise<void> {
     await this.findOneIfAuthorized(id, userId);
     await this.prisma.dateVote.create({
-      data: { projectId: id, dateId, userId },
+      data: { projectId: id, dateId, userId, vote: true, comment: null },
     });
   }
 

@@ -1,6 +1,7 @@
 import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
-import { NotificationService, NotificationType } from '../../../notifications/notification.service';
+import { NotificationService } from '../../../notifications/notification.service';
+import { NotificationType } from '../../../notifications/notification.types';
 
 @Injectable()
 export class AccommodationService {

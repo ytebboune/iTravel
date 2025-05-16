@@ -1,14 +1,19 @@
 import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateTransportOptionDto } from './dto/create-transport-option.dto';
 import { TransportVoteDto } from './dto/transport-vote.dto';
 import { AddTransportCommentDto } from './dto/add-transport-comment.dto';
 import { extractTransportInfoFromUrl } from './utils/transport-scraper';
-import { NotificationService, NotificationType } from 'src/notifications/notification.service';
+import { NotificationService } from '../../../notifications/notification.service';
+import { NotificationType } from '../../../notifications/notification.types';
 import { UrlValidator } from 'src/utils/url-validator';
 import { MonitoringService } from 'src/monitoring/monitoring.service';
 import { SortTransportDto, SortField, SortOrder } from './dto/sort-transport.dto';
 import { Prisma } from '@prisma/client';
+import { WebsocketGateway } from '../../../websocket/websocket.gateway';
+import { CommentEvent, VoteEvent, SelectionEvent } from '../../../websocket/websocket.types';
+import { Decimal } from '@prisma/client/runtime/library';
+import { TransportOption, TransportVote, TravelProject } from '@prisma/client';
 
 interface TransportScore {
   voteScore: number;
@@ -33,9 +38,10 @@ export class TransportService {
     private readonly notificationService: NotificationService,
     private readonly urlValidator: UrlValidator,
     private readonly monitoringService: MonitoringService,
+    private readonly websocketGateway: WebsocketGateway,
   ) {}
 
-  async authorize(projectId: string, userId: string) {
+  async authorize(projectId: string, userId: string): Promise<TravelProject> {
     this.logger.debug(`Authorizing user ${userId} for project ${projectId}`);
     const project = await this.prisma.travelProject.findUnique({
       where: { id: projectId },

@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateAccommodationDto } from './dto/create-accommodation.dto';
 import { AddVoteDto } from './dto/add-vote-lodging.dto';
 import { CreateAvailabilityDto } from './dto/create-availability.dto';
@@ -8,9 +8,13 @@ import { Prisma } from '@prisma/client';
 import { extractPhotosFromUrl } from './utils/photo-scraper';
 import AddCommentLodgingDto from './dto/add-comment-lodging.dto';
 import { UpdateAccommodationDto } from './dto/update-accommodation.dto';
-import { NotificationService, NotificationType } from 'src/notifications/notification.service';
+import { NotificationService } from '../../../notifications/notification.service';
+import { NotificationType } from '../../../notifications/notification.types';
 import { UrlValidator } from 'src/utils/url-validator';
 import { MonitoringService } from 'src/monitoring/monitoring.service';
+import { WebsocketGateway } from '../../../websocket/websocket.gateway';
+import { CommentEvent, VoteEvent, SelectionEvent } from '../../../websocket/websocket.types';
+import { Accommodation, AccommodationVote, TravelProject } from '@prisma/client';
 
 @Injectable()
 export class LodgingService {
@@ -21,6 +25,7 @@ export class LodgingService {
     private readonly notificationService: NotificationService,
     private readonly urlValidator: UrlValidator,
     private readonly monitoringService: MonitoringService,
+    private readonly websocketGateway: WebsocketGateway,
   ) {}
 
   async authorize(projectId: string, userId: string) {

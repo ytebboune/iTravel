@@ -1,15 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { Logger } from '@nestjs/common';
-
-export enum NotificationType {
-  PROJECT_CREATED = 'PROJECT_CREATED',
-  PARTICIPANT_ADDED = 'PARTICIPANT_ADDED',
-  VOTE_ADDED = 'VOTE_ADDED',
-  VOTE_DELETED = 'VOTE_DELETED',
-  COMMENT_ADDED = 'COMMENT_ADDED',
-  TRANSPORT_SELECTED = 'TRANSPORT_SELECTED',
-  ACCOMMODATION_SELECTED = 'ACCOMMODATION_SELECTED',
-}
+import { Injectable, Logger } from '@nestjs/common';
+import { NotificationType } from './notification.types';
 
 @Injectable()
 export class NotificationService {

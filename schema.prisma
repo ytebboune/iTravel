@@ -271,16 +271,19 @@ model Photo {
 /// Commentaire sur un hébergement
 model Comment {
   id              String   @id @default(uuid())
-  accommodationId String
+  accommodationId String?
+  destinationId   String?
   userId          String
   content         String
   createdAt       DateTime @default(now())
 
   // Relations
-  accommodation   Accommodation @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
-  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accommodation   Accommodation? @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+  destination     Destination?   @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([accommodationId])
+  @@index([destinationId])
   @@index([userId])
   @@map("accommodation_comments")
 }
@@ -312,6 +315,7 @@ model Destination {
   project       TravelProject     @relation(fields: [projectId], references: [id], onDelete: Cascade)
   creator       User             @relation("DestinationCreator", fields: [addedBy], references: [id])
   votes         DestinationVote[]
+  comments      Comment[]
 
   @@index([projectId])
   @@index([addedBy])
@@ -324,12 +328,15 @@ model DestinationVote {
   projectId     String
   destinationId String
   userId        String
+  vote          Boolean
+  comment       String?
   votedAt       DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   // Relations
   project       TravelProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
   destination   Destination   @relation(fields: [destinationId], references: [id], onDelete: Cascade)
-  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, destinationId, userId])
   @@index([projectId])
@@ -363,12 +370,15 @@ model DateVote {
   projectId String
   dateId    String
   userId    String
+  vote      Boolean
+  comment   String?
   votedAt   DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
 
   // Relations
   project   TravelProject  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   date      DateSuggestion @relation(fields: [dateId], references: [id], onDelete: Cascade)
-  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, dateId, userId])
   @@index([projectId])
