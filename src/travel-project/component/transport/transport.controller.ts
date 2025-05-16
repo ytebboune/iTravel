@@ -73,7 +73,7 @@ export class TransportController {
     @Param('id') id: string,
     @Request() req,
   ) {
-    return this.service.validateOption(projectId, id, req.user.id);
+    return this.service.validateOption(projectId, id, req.user.sub);
   }
 
   @Post(':id/unvalidate')

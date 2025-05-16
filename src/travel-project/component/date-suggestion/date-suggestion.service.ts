@@ -4,7 +4,7 @@ import { NotificationService } from '../../../notifications/notification.service
 import { NotificationType } from '../../../notifications/notification.types';
 import { WebsocketGateway } from '../../../websocket/websocket.gateway';
 import { CommentEvent, VoteEvent, SelectionEvent } from '../../../websocket/websocket.types';
-import { DateSuggestion, DateVote, TravelProject } from '@prisma/client';
+import { DateSuggestion, DateVote, TravelProject, Prisma } from '@prisma/client';
 
 @Injectable()
 export class DateSuggestionService {
@@ -36,13 +36,119 @@ export class DateSuggestionService {
     return project;
   }
 
+  async validateOption(projectId: string, dateId: string, userId: string) {
+    const project = await this.authorize(projectId, userId);
+    if (project.creatorId !== userId) {
+      throw new ForbiddenException('Only the project creator can validate options');
+    }
+
+    // Désélectionner toutes les autres dates
+    await this.prisma.dateSuggestion.updateMany({
+      where: { 
+        projectId,
+        isSelected: true 
+      },
+      data: { 
+        isSelected: false,
+        selectedAt: null 
+      },
+    });
+
+    // Sélectionner la nouvelle date
+    const dateSuggestion = await this.prisma.dateSuggestion.update({
+      where: { id: dateId },
+      data: {
+        isSelected: true,
+        selectedAt: new Date(),
+      },
+    });
+
+    const selectionEvent: SelectionEvent = {
+      type: 'date',
+      projectId,
+      dateId,
+      selection: {
+        id: dateSuggestion.id,
+        isSelected: true,
+        selectedBy: userId,
+        selectedAt: dateSuggestion.selectedAt!,
+      },
+    };
+
+    this.websocketGateway.server
+      .to(`project:${projectId}`)
+      .emit('selectionReceived', selectionEvent);
+
+    await this.notificationService.notify(NotificationType.DATE_VOTE, {
+      projectId,
+      userId,
+      data: {
+        message: 'Date selected',
+        dateId,
+      },
+    });
+
+    return dateSuggestion;
+  }
+
+  async unvalidateOption(projectId: string, dateId: string, userId: string) {
+    const project = await this.authorize(projectId, userId);
+    if (project.creatorId !== userId) {
+      throw new ForbiddenException('Only the project creator can unvalidate options');
+    }
+
+    const dateSuggestion = await this.prisma.dateSuggestion.update({
+      where: { id: dateId },
+      data: {
+        isSelected: false,
+        selectedAt: null,
+      },
+    });
+
+    const selectionEvent: SelectionEvent = {
+      type: 'date',
+      projectId,
+      dateId,
+      selection: {
+        id: dateSuggestion.id,
+        isSelected: false,
+        selectedBy: userId,
+        selectedAt: new Date(),
+      },
+    };
+
+    this.websocketGateway.server
+      .to(`project:${projectId}`)
+      .emit('selectionRemoved', selectionEvent);
+
+    await this.notificationService.notify(NotificationType.DATE_VOTE, {
+      projectId,
+      userId,
+      data: {
+        message: 'Date unselected',
+        dateId,
+      },
+    });
+
+    return dateSuggestion;
+  }
+
+  async getValidatedOption(projectId: string) {
+    return this.prisma.dateSuggestion.findFirst({
+      where: {
+        projectId,
+        isSelected: true,
+      },
+    });
+  }
+
   async vote(projectId: string, dateId: string, userId: string, vote: boolean, comment?: string) {
-    const date = await this.prisma.dateSuggestion.findUnique({
+    const dateSuggestion = await this.prisma.dateSuggestion.findUnique({
       where: { id: dateId },
       include: { project: true },
     });
 
-    if (!date) {
+    if (!dateSuggestion) {
       throw new NotFoundException('Date suggestion not found');
     }
 
@@ -95,7 +201,7 @@ export class DateSuggestionService {
       userId,
       data: {
         dateId,
-        date: date,
+        dateSuggestion: dateSuggestion,
         vote,
         comment,
       },
@@ -164,96 +270,6 @@ export class DateSuggestionService {
     return vote;
   }
 
-  async validateOption(projectId: string, dateId: string, userId: string) {
-    const project = await this.authorize(projectId, userId);
-    if (project.creatorId !== userId) {
-      throw new ForbiddenException('Only the project creator can validate options');
-    }
-
-    const dateSuggestion = await this.prisma.dateSuggestion.update({
-      where: {
-        id: dateId,
-      },
-      data: {
-      },
-    });
-
-    const selectionEvent: SelectionEvent = {
-      type: 'date',
-      projectId,
-      dateId,
-      selection: {
-        id: dateSuggestion.id,
-        isSelected: true,
-        selectedBy: userId,
-        selectedAt: new Date(),
-      },
-    };
-
-    this.websocketGateway.server
-      .to(`project:${projectId}`)
-      .emit('selectionReceived', selectionEvent);
-
-    await this.notificationService.notify(NotificationType.DATE_SELECTED, {
-      projectId,
-      userId,
-      data: {
-        message: 'Date selected',
-        dateId,
-      },
-    });
-
-    return dateSuggestion;
-  }
-
-  async unvalidateOption(projectId: string, dateId: string, userId: string) {
-    const project = await this.authorize(projectId, userId);
-    if (project.creatorId !== userId) {
-      throw new ForbiddenException('Only the project creator can unvalidate options');
-    }
-
-    const dateSuggestion = await this.prisma.dateSuggestion.update({
-      where: { id: dateId },
-      data: {
-      },
-    });
-
-    const selectionEvent: SelectionEvent = {
-      type: 'date',
-      projectId,
-      dateId,
-      selection: {
-        id: dateSuggestion.id,
-        isSelected: false,
-        selectedBy: userId,
-        selectedAt: new Date(),
-      },
-    };
-
-    this.websocketGateway.server
-      .to(`project:${projectId}`)
-      .emit('selectionRemoved', selectionEvent);
-
-    await this.notificationService.notify(NotificationType.DATE_UNSELECTED, {
-      projectId,
-      userId,
-      data: {
-        message: 'Date unselected',
-        dateId,
-      },
-    });
-
-    return dateSuggestion;
-  }
-
-  async getValidatedOption(projectId: string) {
-    return this.prisma.dateSuggestion.findFirst({
-      where: {
-        projectId,
-      },
-    });
-  }
-
   async getVoters(dateId: string, userId: string) {
     const dateSuggestion = await this.prisma.dateSuggestion.findUnique({
       where: { id: dateId },
@@ -311,5 +327,58 @@ export class DateSuggestionService {
       ...data,
       score: data.upvotes - data.downvotes,
     }));
+  }
+
+  async createDateSuggestion(projectId: string, userId: string, data: { startDate: Date; endDate: Date }) {
+    await this.authorize(projectId, userId);
+
+    const dateSuggestion = await this.prisma.dateSuggestion.create({
+      data: {
+        projectId,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        addedBy: userId,
+      },
+    });
+
+    this.websocketGateway.server
+      .to(`project:${projectId}`)
+      .emit('dateSuggestionCreated', {
+        type: 'date',
+        projectId,
+        dateSuggestion,
+      });
+
+    await this.notificationService.notify(NotificationType.DATE_VOTE, {
+      projectId,
+      userId,
+      data: {
+        message: 'New date suggestion created',
+        dateId: dateSuggestion.id,
+      },
+    });
+
+    return dateSuggestion;
+  }
+
+  async getDateSuggestions(projectId: string, userId: string) {
+    await this.authorize(projectId, userId);
+
+    return this.prisma.dateSuggestion.findMany({
+      where: { projectId },
+      include: {
+        votes: {
+          select: {
+            userId: true,
+            vote: true,
+            comment: true,
+            votedAt: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
   }
 } 

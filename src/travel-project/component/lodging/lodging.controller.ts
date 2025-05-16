@@ -1,7 +1,7 @@
 import {
   Controller, Post, Get, Patch, Delete, Param, Body, Request, UseGuards, Query
 } from '@nestjs/common';
-import { AuthGuard } from 'src/auth/auth.guard';
+import { AuthGuard } from '../../../auth/auth.guard';
 import { LodgingService } from './lodging.service';
 import { CreateAccommodationDto } from './dto/create-accommodation.dto';
 import { AddVoteDto } from './dto/add-vote-lodging.dto';
@@ -9,6 +9,7 @@ import { CreateAvailabilityDto } from './dto/create-availability.dto';
 import { FilterAccommodationDto } from './dto/filter-accomodation.dto';
 import AddCommentLodgingDto from './dto/add-comment-lodging.dto';
 import { UpdateAccommodationDto } from './dto/update-accommodation.dto';
+import { Request as ExpressRequest } from 'express';
 
 @UseGuards(AuthGuard)
 @Controller('projects/:projectId/lodging')
