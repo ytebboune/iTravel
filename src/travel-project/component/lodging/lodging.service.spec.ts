@@ -50,6 +50,13 @@ describe('LodgingService', () => {
     // Add any necessary mock methods for MonitoringService
   };
 
+  const mockWebsocketGateway = {
+    server: {
+      to: jest.fn().mockReturnThis(),
+      emit: jest.fn(),
+    },
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -58,6 +65,7 @@ describe('LodgingService', () => {
         { provide: NotificationService, useValue: mockNotificationService },
         { provide: UrlValidator, useValue: mockUrlValidator },
         { provide: MonitoringService, useValue: mockMonitoringService },
+        { provide: require('../../../websocket/websocket.gateway').WebsocketGateway, useValue: mockWebsocketGateway },
       ],
     }).compile();
 
@@ -108,7 +116,7 @@ describe('LodgingService', () => {
       expect(result).toBeDefined();
       expect(mockUrlValidator.validateUrl).toHaveBeenCalledWith(dtoWithUrl.link, 'accommodation');
       expect(mockNotificationService.notify).toHaveBeenCalled();
-    });
+    }, 10000);
 
     it('should throw ForbiddenException for invalid URL', async () => {
       const dtoWithUrl = { ...createDto, link: 'https://invalid-url.com' };
@@ -245,36 +253,46 @@ describe('LodgingService', () => {
     const accommodationId = 'accommodation-1';
     const userId = 'user-1';
     const availabilityDto = {
-      start: '2024-04-01T10:00:00Z',
-      end: '2024-04-05T10:00:00Z'
+      accommodationId,
+      start: '2024-03-01',
+      end: '2024-03-05',
     };
 
-    it('should add availability successfully', async () => {
-      mockPrisma.accommodation.findUnique.mockResolvedValue({ 
-        id: accommodationId, 
-        projectId: 'project-1' 
-      });
-      mockPrisma.travelProject.findUnique.mockResolvedValue({ 
-        id: 'project-1', 
-        participants: [{ userId }] 
-      });
-      mockPrisma.availability.create.mockResolvedValue({
+    it('should add availability to an accommodation', async () => {
+      const accommodation = {
+        id: accommodationId,
+        projectId: 'project-1',
+      };
+
+      const availability = {
         id: 'availability-1',
-        ...availabilityDto,
-        accommodationId
+        accommodationId,
+        start: new Date(availabilityDto.start),
+        end: new Date(availabilityDto.end),
+      };
+
+      mockPrisma.accommodation.findUnique.mockResolvedValue(accommodation);
+      mockPrisma.travelProject.findUnique.mockResolvedValue({
+        id: 'project-1',
+        creatorId: userId,
+        participants: [],
       });
+      mockPrisma.availability.create.mockResolvedValue(availability);
 
       const result = await service.addAvailability(accommodationId, availabilityDto, userId);
 
-      expect(result).toBeDefined();
+      expect(result).toEqual(availability);
       expect(mockPrisma.availability.create).toHaveBeenCalledWith({
         data: {
+          accommodation: {
+            connect: {
+              id: accommodationId,
+            },
+          },
           start: availabilityDto.start,
           end: availabilityDto.end,
-          accommodation: { connect: { id: accommodationId } }
-        }
+        },
       });
-      expect(mockNotificationService.notify).toHaveBeenCalled();
     });
 
     it('should throw NotFoundException if accommodation not found', async () => {

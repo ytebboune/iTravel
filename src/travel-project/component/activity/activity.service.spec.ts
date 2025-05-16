@@ -1,12 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AccommodationService } from './accommodation.service';
+import { ActivityService } from './activity.service';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { NotificationService } from '../../../notifications/notification.service';
 import { WebsocketGateway } from '../../../websocket/websocket.gateway';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
 
-describe('AccommodationService', () => {
-  let service: AccommodationService;
+describe('ActivityService', () => {
+  let service: ActivityService;
   let prisma: PrismaService;
   let notificationService: NotificationService;
   let websocketGateway: WebsocketGateway;
@@ -15,14 +15,12 @@ describe('AccommodationService', () => {
     travelProject: {
       findUnique: jest.fn(),
     },
-    accommodation: {
+    activity: {
       create: jest.fn(),
       findMany: jest.fn(),
       findUnique: jest.fn(),
-      update: jest.fn(),
-      updateMany: jest.fn(),
     },
-    accommodationVote: {
+    activityVote: {
       upsert: jest.fn(),
       delete: jest.fn(),
       findMany: jest.fn(),
@@ -43,14 +41,14 @@ describe('AccommodationService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        AccommodationService,
+        ActivityService,
         { provide: PrismaService, useValue: mockPrisma },
         { provide: NotificationService, useValue: mockNotificationService },
         { provide: WebsocketGateway, useValue: mockWebsocketGateway },
       ],
     }).compile();
 
-    service = module.get<AccommodationService>(AccommodationService);
+    service = module.get<ActivityService>(ActivityService);
     prisma = module.get<PrismaService>(PrismaService);
     notificationService = module.get<NotificationService>(NotificationService);
     websocketGateway = module.get<WebsocketGateway>(WebsocketGateway);
@@ -108,42 +106,43 @@ describe('AccommodationService', () => {
     });
   });
 
-  describe('create', () => {
+  describe('createActivity', () => {
     const projectId = 'project-1';
     const userId = 'user-1';
-    const data = {
-      name: 'Test Accommodation',
-      address: '123 Test Street',
-      price: 100,
-      link: 'http://example.com',
-      type: 'HOTEL',
+    const activityData = {
+      title: 'Test Activity',
+      description: 'Test Description',
+      imageUrl: 'http://example.com/image.jpg',
+      suggestedByAI: false,
     };
 
-    it('should create a new accommodation', async () => {
+    it('should create a new activity', async () => {
       const project = {
         id: projectId,
         creatorId: userId,
         participants: [],
       };
 
-      const accommodation = {
-        id: 'accommodation-1',
-        ...data,
+      const activity = {
+        id: 'activity-1',
+        ...activityData,
         projectId,
+        addedBy: userId,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
 
       mockPrisma.travelProject.findUnique.mockResolvedValue(project);
-      mockPrisma.accommodation.create.mockResolvedValue(accommodation);
+      mockPrisma.activity.create.mockResolvedValue(activity);
 
-      const result = await service.create(projectId, userId, data);
+      const result = await service.createActivity(projectId, userId, activityData);
 
-      expect(result).toEqual(accommodation);
-      expect(mockPrisma.accommodation.create).toHaveBeenCalledWith({
+      expect(result).toEqual(activity);
+      expect(mockPrisma.activity.create).toHaveBeenCalledWith({
         data: {
           projectId,
-          ...data,
+          ...activityData,
+          addedBy: userId,
         },
       });
       expect(mockNotificationService.notify).toHaveBeenCalled();
@@ -151,24 +150,24 @@ describe('AccommodationService', () => {
     });
   });
 
-  describe('findAll', () => {
+  describe('getActivities', () => {
     const projectId = 'project-1';
     const userId = 'user-1';
 
-    it('should return all accommodations for a project', async () => {
+    it('should return all activities for a project', async () => {
       const project = {
         id: projectId,
         creatorId: userId,
         participants: [],
       };
 
-      const accommodations = [
+      const activities = [
         {
-          id: 'accommodation-1',
-          name: 'Accommodation 1',
-          address: '123 Test Street',
-          price: 100,
+          id: 'activity-1',
+          title: 'Activity 1',
+          description: 'Description 1',
           projectId,
+          addedBy: userId,
           createdAt: new Date(),
           updatedAt: new Date(),
           votes: [],
@@ -176,12 +175,12 @@ describe('AccommodationService', () => {
       ];
 
       mockPrisma.travelProject.findUnique.mockResolvedValue(project);
-      mockPrisma.accommodation.findMany.mockResolvedValue(accommodations);
+      mockPrisma.activity.findMany.mockResolvedValue(activities);
 
-      const result = await service.findAll(projectId, userId);
+      const result = await service.getActivities(projectId, userId);
 
-      expect(result).toEqual(accommodations);
-      expect(mockPrisma.accommodation.findMany).toHaveBeenCalledWith({
+      expect(result).toEqual(activities);
+      expect(mockPrisma.activity.findMany).toHaveBeenCalledWith({
         where: { projectId },
         include: {
           votes: {
@@ -202,7 +201,7 @@ describe('AccommodationService', () => {
 
   describe('vote', () => {
     const projectId = 'project-1';
-    const accommodationId = 'accommodation-1';
+    const activityId = 'activity-1';
     const userId = 'user-1';
     const vote = true;
     const comment = 'Test comment';
@@ -214,15 +213,15 @@ describe('AccommodationService', () => {
         participants: [],
       };
 
-      const accommodation = {
-        id: accommodationId,
+      const activity = {
+        id: activityId,
         projectId,
       };
 
       const voteData = {
         id: 'vote-1',
         projectId,
-        accommodationId,
+        activityId,
         userId,
         vote,
         comment,
@@ -234,13 +233,13 @@ describe('AccommodationService', () => {
       };
 
       mockPrisma.travelProject.findUnique.mockResolvedValue(project);
-      mockPrisma.accommodation.findUnique.mockResolvedValue(accommodation);
-      mockPrisma.accommodationVote.upsert.mockResolvedValue(voteData);
+      mockPrisma.activity.findUnique.mockResolvedValue(activity);
+      mockPrisma.activityVote.upsert.mockResolvedValue(voteData);
 
-      const result = await service.vote(projectId, accommodationId, userId, vote, comment);
+      const result = await service.vote(projectId, activityId, userId, vote, comment);
 
       expect(result).toEqual(voteData);
-      expect(mockPrisma.accommodationVote.upsert).toHaveBeenCalled();
+      expect(mockPrisma.activityVote.upsert).toHaveBeenCalled();
       expect(mockNotificationService.notify).toHaveBeenCalled();
       expect(mockWebsocketGateway.server.to).toHaveBeenCalled();
     });
@@ -248,7 +247,7 @@ describe('AccommodationService', () => {
 
   describe('deleteVote', () => {
     const projectId = 'project-1';
-    const accommodationId = 'accommodation-1';
+    const activityId = 'activity-1';
     const userId = 'user-1';
 
     it('should delete a vote', async () => {
@@ -258,15 +257,15 @@ describe('AccommodationService', () => {
         participants: [],
       };
 
-      const accommodation = {
-        id: accommodationId,
+      const activity = {
+        id: activityId,
         projectId,
       };
 
       const vote = {
         id: 'vote-1',
         projectId,
-        accommodationId,
+        activityId,
         userId,
         vote: true,
         comment: 'Test comment',
@@ -278,25 +277,25 @@ describe('AccommodationService', () => {
       };
 
       mockPrisma.travelProject.findUnique.mockResolvedValue(project);
-      mockPrisma.accommodation.findUnique.mockResolvedValue(accommodation);
-      mockPrisma.accommodationVote.delete.mockResolvedValue(vote);
+      mockPrisma.activity.findUnique.mockResolvedValue(activity);
+      mockPrisma.activityVote.delete.mockResolvedValue(vote);
 
-      const result = await service.deleteVote(projectId, accommodationId, userId);
+      const result = await service.deleteVote(projectId, activityId, userId);
 
       expect(result).toEqual(vote);
-      expect(mockPrisma.accommodationVote.delete).toHaveBeenCalled();
+      expect(mockPrisma.activityVote.delete).toHaveBeenCalled();
       expect(mockNotificationService.notify).toHaveBeenCalled();
       expect(mockWebsocketGateway.server.to).toHaveBeenCalled();
     });
   });
 
   describe('getVoters', () => {
-    const accommodationId = 'accommodation-1';
+    const activityId = 'activity-1';
     const userId = 'user-1';
 
-    it('should return all voters for an accommodation', async () => {
-      const accommodation = {
-        id: accommodationId,
+    it('should return all voters for an activity', async () => {
+      const activity = {
+        id: activityId,
         projectId: 'project-1',
       };
 
@@ -309,19 +308,19 @@ describe('AccommodationService', () => {
         },
       ];
 
-      mockPrisma.accommodation.findUnique.mockResolvedValue(accommodation);
+      mockPrisma.activity.findUnique.mockResolvedValue(activity);
       mockPrisma.travelProject.findUnique.mockResolvedValue({
         id: 'project-1',
         creatorId: userId,
         participants: [],
       });
-      mockPrisma.accommodationVote.findMany.mockResolvedValue(votes);
+      mockPrisma.activityVote.findMany.mockResolvedValue(votes);
 
-      const result = await service.getVoters(accommodationId, userId);
+      const result = await service.getVoters(activityId, userId);
 
       expect(result).toEqual(votes);
-      expect(mockPrisma.accommodationVote.findMany).toHaveBeenCalledWith({
-        where: { accommodationId },
+      expect(mockPrisma.activityVote.findMany).toHaveBeenCalledWith({
+        where: { activityId },
         select: {
           userId: true,
           votedAt: true,
@@ -336,7 +335,7 @@ describe('AccommodationService', () => {
     const projectId = 'project-1';
     const userId = 'user-1';
 
-    it('should return aggregated votes for all accommodations', async () => {
+    it('should return aggregated votes for all activities', async () => {
       const project = {
         id: projectId,
         creatorId: userId,
@@ -345,7 +344,7 @@ describe('AccommodationService', () => {
 
       const votes = [
         {
-          accommodationId: 'accommodation-1',
+          activityId: 'activity-1',
           userId: 'user-1',
           vote: true,
           comment: 'Test comment',
@@ -354,13 +353,13 @@ describe('AccommodationService', () => {
       ];
 
       mockPrisma.travelProject.findUnique.mockResolvedValue(project);
-      mockPrisma.accommodationVote.findMany.mockResolvedValue(votes);
+      mockPrisma.activityVote.findMany.mockResolvedValue(votes);
 
       const result = await service.getVotes(projectId, userId);
 
       expect(result).toEqual([
         {
-          accommodationId: 'accommodation-1',
+          activityId: 'activity-1',
           upvotes: 1,
           downvotes: 0,
           userVote: true,
@@ -368,10 +367,10 @@ describe('AccommodationService', () => {
           score: 1,
         },
       ]);
-      expect(mockPrisma.accommodationVote.findMany).toHaveBeenCalledWith({
+      expect(mockPrisma.activityVote.findMany).toHaveBeenCalledWith({
         where: { projectId },
         select: {
-          accommodationId: true,
+          activityId: true,
           userId: true,
           vote: true,
           comment: true,

@@ -29,6 +29,7 @@ model User {
   createdActivities Activity[] @relation("ActivityCreator")
   destinationVotes DestinationVote[]
   dateVotes DateVote[]
+  activityVotes ActivityVote[]
 
   @@map("users")
 }
@@ -58,6 +59,7 @@ model TravelProject {
   transportVotes TransportVote[]
   accommodationVotes AccommodationVote[]
   planning     PlanningActivity[]
+  activityVotes ActivityVote[]
 
   @@index([creatorId])
   @@map("travel_projects")
@@ -399,25 +401,48 @@ model DateVote {
   @@map("date_votes")
 }
 
+/// Activité
 model Activity {
-  id            String        @id @default(uuid())
+  id            String   @id @default(uuid())
   projectId     String
   title         String
   description   String
   imageUrl      String?
+  suggestedByAI Boolean  @default(false)
   addedBy       String
-  suggestedByAI Boolean       @default(false)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   // Relations
   project       TravelProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
   creator       User         @relation("ActivityCreator", fields: [addedBy], references: [id])
+  votes         ActivityVote[]
   planningActivities PlanningActivity[]
 
   @@index([projectId])
   @@index([addedBy])
-  @@map("travel_project_activities")
+  @@map("activities")
+}
+
+/// Vote sur une activité
+model ActivityVote {
+  projectId   String
+  activityId  String
+  userId      String
+  vote        Boolean
+  comment     String?
+  votedAt     DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  activity    Activity      @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  project     TravelProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, activityId, userId])
+  @@index([activityId])
+  @@index([userId])
+  @@map("activity_votes")
 }
 
 /// Activité prédéfinie

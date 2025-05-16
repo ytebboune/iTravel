@@ -5,6 +5,7 @@ import { NotificationService } from '../../../notifications/notification.service
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
 import { UrlValidator } from '../../../utils/url-validator';
 import { MonitoringService } from '../../../monitoring/monitoring.service';
+import { WebsocketGateway } from '../../../websocket/websocket.gateway';
 
 describe('TransportService', () => {
   let service: TransportService;
@@ -12,6 +13,7 @@ describe('TransportService', () => {
   let notificationService: NotificationService;
   let urlValidator: UrlValidator;
   let monitoringService: MonitoringService;
+  let websocketGateway: WebsocketGateway;
 
   const mockPrisma = {
     travelProject: {
@@ -45,6 +47,13 @@ describe('TransportService', () => {
     // Add any necessary mock methods for MonitoringService
   };
 
+  const mockWebsocketGateway = {
+    server: {
+      to: jest.fn().mockReturnThis(),
+      emit: jest.fn(),
+    },
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -53,6 +62,7 @@ describe('TransportService', () => {
         { provide: NotificationService, useValue: mockNotificationService },
         { provide: UrlValidator, useValue: mockUrlValidator },
         { provide: MonitoringService, useValue: mockMonitoringService },
+        { provide: WebsocketGateway, useValue: mockWebsocketGateway },
       ],
     }).compile();
 
@@ -61,6 +71,7 @@ describe('TransportService', () => {
     notificationService = module.get<NotificationService>(NotificationService);
     urlValidator = module.get<UrlValidator>(UrlValidator);
     monitoringService = module.get<MonitoringService>(MonitoringService);
+    websocketGateway = module.get<WebsocketGateway>(WebsocketGateway);
   });
 
   it('should be defined', () => {
