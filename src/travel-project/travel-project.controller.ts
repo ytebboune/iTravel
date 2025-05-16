@@ -8,6 +8,8 @@ import {
     Delete,
     Req,
     UseGuards,
+    Request,
+    NotFoundException,
 } from '@nestjs/common';
 import { TravelProjectService } from './travel-project.service';
 import { CreateTravelProjectDto } from './dto/create-travel-project.dto';
@@ -89,6 +91,21 @@ export class TravelProjectController {
             destId,
             req.user.sub,
         );
+    }
+
+    @Get('share/:shareCode')
+    async getProjectByShareCode(@Param('shareCode') shareCode: string) {
+        const project = await this.travelProjectService.findByShareCode(shareCode);
+        if (!project) {
+            throw new NotFoundException('Projet non trouvé');
+        }
+        return project;
+    }
+
+    @Post('share/:shareCode/join')
+    @UseGuards(AuthGuard)
+    async joinProject(@Param('shareCode') shareCode: string, @Request() req) {
+        return this.travelProjectService.joinByShareCode(shareCode, req.user.id);
     }
 }
 

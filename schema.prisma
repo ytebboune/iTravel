@@ -7,97 +7,392 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model TravelProject {
-  id               String            @id @default(uuid())
-  title            String
-  description      String?
-  creatorId        String            @map("creator_id")
-  status           String            @default("draft")
-  createdAt        DateTime          @default(now()) @map("created_at")
-  updatedAt        DateTime          @updatedAt @map("updated_at")
-  dateVotes        DateVote[]        @relation("ProjectDateVotes")
-  destinationVotes DestinationVote[] @relation("ProjectDestinationVotes")
-  activities       Activity[]        @relation("ProjectActivities")
-  dateSuggestions  DateSuggestion[]  @relation("ProjectDateSuggestions")
-  destinations     Destination[]     @relation("ProjectDestinations")
-  participants     ProjectUser[]     @relation("ProjectParticipants")
+/// Modèle utilisateur principal
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  username  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
+  // Relations
+  createdProjects TravelProject[] @relation("ProjectCreator")
+  projectMemberships ProjectUser[]
+  transportVotes TransportVote[]
+  transportComments TransportComment[]
+  transportCommentLikes TransportCommentLike[]
+  accommodationVotes AccommodationVote[]
+  accommodationComments Comment[]
+  createdTransportOptions TransportOption[] @relation("TransportCreator")
+  createdDestinations Destination[] @relation("DestinationCreator")
+  createdDateSuggestions DateSuggestion[] @relation("DateSuggestionCreator")
+  createdActivities Activity[] @relation("ActivityCreator")
+  destinationVotes DestinationVote[]
+  dateVotes DateVote[]
+
+  @@map("users")
+}
+
+/// Projet de voyage
+model TravelProject {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  creatorId   String
+  shareCode   String   @unique // Code unique pour le partage
+  status      ProjectStatus @default(DRAFT)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  creator     User     @relation("ProjectCreator", fields: [creatorId], references: [id])
+  participants ProjectUser[]
+  dateSuggestions DateSuggestion[]
+  destinationVotes DestinationVote[]
+  dateVotes    DateVote[]
+  destinations Destination[]
+  activities   Activity[]
+  accommodations Accommodation[]
+  transportOptions TransportOption[]
+  transportVotes TransportVote[]
+  accommodationVotes AccommodationVote[]
+
+  @@index([creatorId])
   @@map("travel_projects")
 }
 
-model ProjectUser {
-  projectId String        @map("project_id")
-  userId    String        @map("user_id")
-  joinedAt  DateTime      @default(now()) @map("joined_at")
-  project   TravelProject @relation("ProjectParticipants", fields: [projectId], references: [id], onDelete: Cascade)
+/// Statut du projet
+enum ProjectStatus {
+  DRAFT      @map("draft")      /// Brouillon
+  PLANNING   @map("planning")   /// En cours de planification
+  CONFIRMED  @map("confirmed")  /// Confirmé
+  COMPLETED  @map("completed")  /// Terminé
+  CANCELLED  @map("cancelled")  /// Annulé
+}
 
-  @@id([projectId, userId])
-  @@map("travel_project_participants")
+/// Participant à un projet
+model ProjectUser {
+  id        String   @id @default(uuid())
+  projectId String
+  userId    String
+  role      ProjectRole @default(MEMBER)
+  joinedAt  DateTime @default(now())
+
+  // Relations
+  project   TravelProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([projectId])
+  @@index([userId])
+  @@map("project_participants")
+}
+
+/// Rôle dans un projet
+enum ProjectRole {
+  ADMIN     @map("admin")     /// Administrateur
+  MEMBER    @map("member")    /// Membre
+  VIEWER    @map("viewer")    /// Observateur
+}
+
+/// Option de transport
+model TransportOption {
+  id            String        @id @default(uuid())
+  projectId     String
+  type          TransportType
+  departure     String
+  arrival       String
+  date          DateTime
+  duration      String?
+  price         Decimal?      @db.Decimal(10, 2)
+  link          String?
+  company       String?
+  flightNumber  String?
+  baggageIncluded Boolean?
+  nbStops       Int?
+  seatInfo      String?
+  isSelected    Boolean       @default(false)  // Option validée par le créateur
+  selectedAt    DateTime?     // Date de validation
+  addedBy       String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // Relations
+  project       TravelProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  creator       User         @relation("TransportCreator", fields: [addedBy], references: [id])
+  votes         TransportVote[]
+  comments      TransportComment[]
+
+  @@index([projectId])
+  @@index([addedBy])
+  @@map("transport_options")
+}
+
+/// Type de transport
+enum TransportType {
+  FLIGHT   @map("flight")   /// Avion
+  TRAIN    @map("train")    /// Train
+  BUS      @map("bus")      /// Bus
+  CARPOOL  @map("carpool")  /// Covoiturage
+  FERRY    @map("ferry")    /// Ferry
+  OTHER    @map("other")    /// Autre
+}
+
+/// Vote sur une option de transport
+model TransportVote {
+  projectId   String
+  transportId String
+  userId      String
+  vote        Boolean
+  comment     String?
+  votedAt     DateTime @default(now())
+  updatedAt   DateTime @updatedAt  /// Pour suivre les changements de vote
+
+  // Relations
+  transport   TransportOption @relation(fields: [transportId], references: [id], onDelete: Cascade)
+  project     TravelProject   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, transportId, userId])
+  @@index([transportId])
+  @@index([userId])
+  @@map("transport_votes")
+}
+
+/// Commentaire sur une option de transport
+model TransportComment {
+  id          String   @id @default(uuid())
+  transportId String
+  userId      String
+  content     String
+  parentId    String?  /// Pour les réponses aux commentaires
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  transport   TransportOption @relation(fields: [transportId], references: [id], onDelete: Cascade)
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent      TransportComment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies     TransportComment[] @relation("CommentReplies")
+  likes       TransportCommentLike[]
+
+  @@index([transportId])
+  @@index([userId])
+  @@index([parentId])
+  @@map("transport_comments")
+}
+
+/// Like sur un commentaire
+model TransportCommentLike {
+  id          String   @id @default(uuid())
+  commentId   String
+  userId      String
+  createdAt   DateTime @default(now())
+
+  // Relations
+  comment     TransportComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
+  @@index([commentId])
+  @@index([userId])
+  @@map("transport_comment_likes")
+}
+
+/// Hébergement
+model Accommodation {
+  id            String            @id @default(uuid())
+  projectId     String
+  name          String
+  address       String
+  price         Decimal           @db.Decimal(10, 2)
+  link          String?
+  type          AccommodationType @default(OTHER)
+  isSelected    Boolean           @default(false)  // Hébergement validé par le créateur
+  selectedAt    DateTime?         // Date de validation
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  // Relations
+  project       TravelProject     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  photos        Photo[]
+  votes         AccommodationVote[]
+  comments      Comment[]
+  availability  Availability[]
+
+  @@index([projectId])
+  @@map("accommodations")
+}
+
+/// Type d'hébergement
+enum AccommodationType {
+  HOTEL      @map("hotel")      /// Hôtel
+  HOSTEL     @map("hostel")     /// Auberge de jeunesse
+  APARTMENT  @map("apartment")  /// Appartement
+  HOUSE      @map("house")      /// Maison
+  CAMPING    @map("camping")    /// Camping
+  OTHER      @map("other")      /// Autre
+}
+
+/// Vote sur un hébergement
+model AccommodationVote {
+  projectId       String
+  accommodationId String
+  userId          String
+  vote            Boolean
+  comment         String?
+  votedAt         DateTime @default(now())
+
+  // Relations
+  project         TravelProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  accommodation   Accommodation @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, accommodationId, userId])
+  @@index([accommodationId])
+  @@index([userId])
+  @@map("accommodation_votes")
+}
+
+/// Photo d'hébergement
+model Photo {
+  id              String   @id @default(uuid())
+  accommodationId String
+  url             String
+  createdAt       DateTime @default(now())
+
+  // Relations
+  accommodation   Accommodation @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+
+  @@index([accommodationId])
+  @@map("accommodation_photos")
+}
+
+/// Commentaire sur un hébergement
+model Comment {
+  id              String   @id @default(uuid())
+  accommodationId String
+  userId          String
+  content         String
+  createdAt       DateTime @default(now())
+
+  // Relations
+  accommodation   Accommodation @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([accommodationId])
+  @@index([userId])
+  @@map("accommodation_comments")
+}
+
+/// Disponibilité d'un hébergement
+model Availability {
+  id              String   @id @default(uuid())
+  accommodationId String
+  start           DateTime
+  end             DateTime
+
+  // Relations
+  accommodation   Accommodation @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+
+  @@index([accommodationId])
+  @@map("accommodation_availability")
 }
 
 model Destination {
   id            String            @id @default(uuid())
-  projectId     String            @map("project_id")
+  projectId     String
   name          String
-  addedBy       String            @map("added_by")
-  suggestedByAI Boolean           @default(false) @map("suggested_by_ai")
-  createdAt     DateTime          @default(now()) @map("created_at")
-  updatedAt     DateTime          @updatedAt @map("updated_at")
-  votes         DestinationVote[] @relation("DestinationVotes")
-  project       TravelProject     @relation("ProjectDestinations", fields: [projectId], references: [id], onDelete: Cascade)
+  addedBy       String
+  suggestedByAI Boolean           @default(false)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
 
+  // Relations
+  project       TravelProject     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  creator       User             @relation("DestinationCreator", fields: [addedBy], references: [id])
+  votes         DestinationVote[]
+
+  @@index([projectId])
+  @@index([addedBy])
   @@map("travel_project_destinations")
 }
 
+/// Vote sur une destination
 model DestinationVote {
-  projectId     String        @map("project_id")
-  destinationId String        @map("destination_id")
-  userId        String        @map("user_id")
-  votedAt       DateTime      @default(now()) @map("voted_at")
-  destination   Destination   @relation("DestinationVotes", fields: [destinationId], references: [id], onDelete: Cascade)
-  project       TravelProject @relation("ProjectDestinationVotes", fields: [projectId], references: [id], onDelete: Cascade)
+  id            String        @id @default(uuid())
+  projectId     String
+  destinationId String
+  userId        String
+  votedAt       DateTime      @default(now())
 
-  @@id([projectId, destinationId, userId])
+  // Relations
+  project       TravelProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  destination   Destination   @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, destinationId, userId])
+  @@index([projectId])
+  @@index([destinationId])
+  @@index([userId])
   @@map("destination_votes")
 }
 
 model DateSuggestion {
   id        String        @id @default(uuid())
-  projectId String        @map("project_id")
-  startDate DateTime      @map("start_date")
-  endDate   DateTime      @map("end_date")
-  addedBy   String        @map("added_by")
-  createdAt DateTime      @default(now()) @map("created_at")
-  updatedAt DateTime      @updatedAt @map("updated_at")
-  votes     DateVote[]    @relation("DateVotes")
-  project   TravelProject @relation("ProjectDateSuggestions", fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String
+  startDate DateTime
+  endDate   DateTime
+  addedBy   String
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
 
+  // Relations
+  project   TravelProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  creator   User         @relation("DateSuggestionCreator", fields: [addedBy], references: [id])
+  votes     DateVote[]
+
+  @@index([projectId])
+  @@index([addedBy])
   @@map("travel_project_dates")
 }
 
+/// Vote sur une date
 model DateVote {
-  projectId String         @map("project_id")
-  dateId    String         @map("date_id")
-  userId    String         @map("user_id")
-  votedAt   DateTime       @default(now()) @map("voted_at")
-  date      DateSuggestion @relation("DateVotes", fields: [dateId], references: [id], onDelete: Cascade)
-  project   TravelProject  @relation("ProjectDateVotes", fields: [projectId], references: [id], onDelete: Cascade)
+  id        String         @id @default(uuid())
+  projectId String
+  dateId    String
+  userId    String
+  votedAt   DateTime       @default(now())
 
-  @@id([projectId, dateId, userId])
+  // Relations
+  project   TravelProject  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  date      DateSuggestion @relation(fields: [dateId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, dateId, userId])
+  @@index([projectId])
+  @@index([dateId])
+  @@index([userId])
   @@map("date_votes")
 }
 
 model Activity {
   id            String        @id @default(uuid())
-  projectId     String        @map("project_id")
+  projectId     String
   title         String
   description   String
-  imageUrl      String?       @map("image_url")
-  addedBy       String        @map("added_by")
-  suggestedByAI Boolean       @default(false) @map("suggested_by_ai")
-  createdAt     DateTime      @default(now()) @map("created_at")
-  updatedAt     DateTime      @updatedAt @map("updated_at")
-  project       TravelProject @relation("ProjectActivities", fields: [projectId], references: [id], onDelete: Cascade)
+  imageUrl      String?
+  addedBy       String
+  suggestedByAI Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
+  // Relations
+  project       TravelProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  creator       User         @relation("ActivityCreator", fields: [addedBy], references: [id])
+
+  @@index([projectId])
+  @@index([addedBy])
   @@map("travel_project_activities")
 }

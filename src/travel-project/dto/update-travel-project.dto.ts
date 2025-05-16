@@ -1,5 +1,5 @@
 import { IsOptional, IsString, IsEnum, IsArray, IsUUID } from 'class-validator';
-import { TravelProjectStatus } from '../enums/travel-project-status.enum';
+import { ProjectStatus } from '../enums/project-status.enum';
 
 export class UpdateTravelProjectDto {
   @IsOptional()
@@ -16,8 +16,8 @@ export class UpdateTravelProjectDto {
   participants?: string[];
 
   @IsOptional()
-  @IsEnum(TravelProjectStatus)
-  status?: TravelProjectStatus;
+  @IsEnum(ProjectStatus)
+  status?: ProjectStatus;
 
   @IsOptional()
   @IsUUID()
