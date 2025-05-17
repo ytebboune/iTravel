@@ -1,15 +1,21 @@
 import { Module } from '@nestjs/common';
-import { TransportService } from './transport.service';
 import { TransportController } from './transport.controller';
-import { PrismaModule } from 'src/prisma/prisma.module';
-import { NotificationService } from 'src/notifications/notification.service';
-import { UrlValidator } from 'src/utils/url-validator';
-import { MonitoringService } from 'src/monitoring/monitoring.service';
+import { TransportService } from './transport.service';
+import { PrismaModule } from '../../../prisma/prisma.module';
+import { NotificationModule } from '../../../notifications/notification.module';
+import { MonitoringModule } from '../../../monitoring/monitoring.module';
+import { WebsocketModule } from '../../../websocket/websocket.module';
+import { UrlValidator } from '../../../utils/url-validator';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [
+    PrismaModule,
+    NotificationModule,
+    MonitoringModule,
+    WebsocketModule
+  ],
   controllers: [TransportController],
-  providers: [TransportService, NotificationService, UrlValidator, MonitoringService],
+  providers: [TransportService, UrlValidator],
   exports: [TransportService],
 })
 export class TransportModule {} 

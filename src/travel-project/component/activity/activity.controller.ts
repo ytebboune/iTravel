@@ -2,13 +2,30 @@ import { Controller, Post, Get, Body, Param, UseGuards, Request, Delete } from '
 import { ActivityService } from './activity.service';
 import { AuthGuard } from '../../../auth/auth.guard';
 import { VoteDto } from '../destination/dto/vote.dto';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
 
+@ApiTags('activities')
+@ApiBearerAuth()
 @Controller('projects/:projectId/activities')
 @UseGuards(AuthGuard)
 export class ActivityController {
   constructor(private readonly service: ActivityService) {}
 
   @Post()
+  @ApiOperation({ summary: 'Create a new activity' })
+  @ApiParam({ name: 'projectId', description: 'ID of the project' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        description: { type: 'string' },
+        imageUrl: { type: 'string', nullable: true },
+        suggestedByAI: { type: 'boolean', nullable: true },
+      },
+    },
+  })
+  @ApiResponse({ status: 201, description: 'Activity created successfully' })
   createActivity(
     @Param('projectId') projectId: string,
     @Body() data: {
@@ -23,6 +40,9 @@ export class ActivityController {
   }
 
   @Get()
+  @ApiOperation({ summary: 'Get all activities for a project' })
+  @ApiParam({ name: 'projectId', description: 'ID of the project' })
+  @ApiResponse({ status: 200, description: 'List of activities' })
   getActivities(
     @Param('projectId') projectId: string,
     @Request() req,
@@ -31,6 +51,9 @@ export class ActivityController {
   }
 
   @Get('predefined')
+  @ApiOperation({ summary: 'Get predefined activities' })
+  @ApiParam({ name: 'category', required: false, description: 'Category of activities' })
+  @ApiResponse({ status: 200, description: 'List of predefined activities' })
   getPredefinedActivities(
     @Param('category') category?: string,
   ) {
@@ -38,6 +61,11 @@ export class ActivityController {
   }
 
   @Post(':id/vote')
+  @ApiOperation({ summary: 'Vote for an activity' })
+  @ApiParam({ name: 'projectId', description: 'ID of the project' })
+  @ApiParam({ name: 'id', description: 'ID of the activity' })
+  @ApiBody({ type: VoteDto })
+  @ApiResponse({ status: 201, description: 'Vote added successfully' })
   vote(
     @Param('projectId') projectId: string,
     @Param('id') activityId: string,
@@ -48,6 +76,10 @@ export class ActivityController {
   }
 
   @Delete(':id/vote')
+  @ApiOperation({ summary: 'Delete a vote for an activity' })
+  @ApiParam({ name: 'projectId', description: 'ID of the project' })
+  @ApiParam({ name: 'id', description: 'ID of the activity' })
+  @ApiResponse({ status: 200, description: 'Vote deleted successfully' })
   deleteVote(
     @Param('projectId') projectId: string,
     @Param('id') activityId: string,
@@ -57,6 +89,10 @@ export class ActivityController {
   }
 
   @Get(':id/voters')
+  @ApiOperation({ summary: 'Get voters for an activity' })
+  @ApiParam({ name: 'projectId', description: 'ID of the project' })
+  @ApiParam({ name: 'id', description: 'ID of the activity' })
+  @ApiResponse({ status: 200, description: 'List of voters' })
   getVoters(
     @Param('projectId') projectId: string,
     @Param('id') activityId: string,
@@ -66,6 +102,9 @@ export class ActivityController {
   }
 
   @Get('votes')
+  @ApiOperation({ summary: 'Get votes for a project' })
+  @ApiParam({ name: 'projectId', description: 'ID of the project' })
+  @ApiResponse({ status: 200, description: 'List of votes' })
   getVotes(
     @Param('projectId') projectId: string,
     @Request() req,

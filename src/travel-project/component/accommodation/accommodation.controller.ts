@@ -1,13 +1,20 @@
 import { Controller, Post, Param, Request, Get, UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { AuthGuard } from '../../../auth/auth.guard';
 import { AccommodationService } from './accommodation.service';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 
+@ApiTags('accommodation')
+@ApiBearerAuth()
 @Controller('projects/:projectId/accommodation')
+@UseGuards(AuthGuard)
 export class AccommodationController {
   constructor(private readonly accommodationService: AccommodationService) {}
 
   @Post(':id/validate')
-  @UseGuards(AuthGuard)
+  @ApiOperation({ summary: 'Validate an accommodation option' })
+  @ApiParam({ name: 'projectId', description: 'ID of the project' })
+  @ApiParam({ name: 'id', description: 'ID of the accommodation' })
+  @ApiResponse({ status: 200, description: 'Accommodation validated successfully' })
   async validateOption(
     @Param('projectId') projectId: string,
     @Param('id') id: string,
@@ -17,7 +24,10 @@ export class AccommodationController {
   }
 
   @Post(':id/unvalidate')
-  @UseGuards(AuthGuard)
+  @ApiOperation({ summary: 'Unvalidate an accommodation option' })
+  @ApiParam({ name: 'projectId', description: 'ID of the project' })
+  @ApiParam({ name: 'id', description: 'ID of the accommodation' })
+  @ApiResponse({ status: 200, description: 'Accommodation unvalidated successfully' })
   async unvalidateOption(
     @Param('projectId') projectId: string,
     @Param('id') id: string,
@@ -27,10 +37,10 @@ export class AccommodationController {
   }
 
   @Get('validated')
-  @UseGuards(AuthGuard)
-  async getValidatedOption(
-    @Param('projectId') projectId: string,
-  ) {
+  @ApiOperation({ summary: 'Get validated accommodation option' })
+  @ApiParam({ name: 'projectId', description: 'ID of the project' })
+  @ApiResponse({ status: 200, description: 'Returns the validated accommodation option' })
+  async getValidatedOption(@Param('projectId') projectId: string) {
     return this.accommodationService.getValidatedOption(projectId);
   }
 } 

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { ActivityController } from './activity.controller';
-import { ActivityService } from './activity.service';
+import { PlanningController } from './planning.controller';
+import { PlanningService } from './planning.service';
 import { PrismaModule } from '../../../prisma/prisma.module';
 import { NotificationModule } from '../../../notifications/notification.module';
 import { WebsocketModule } from '../../../websocket/websocket.module';
@@ -11,8 +11,8 @@ import { WebsocketModule } from '../../../websocket/websocket.module';
     NotificationModule,
     WebsocketModule
   ],
-  controllers: [ActivityController],
-  providers: [ActivityService],
-  exports: [ActivityService],
+  controllers: [PlanningController],
+  providers: [PlanningService],
+  exports: [PlanningService],
 })
-export class ActivityModule {} 
+export class PlanningModule {} 
