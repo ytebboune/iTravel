@@ -5,26 +5,28 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { MonitoringModule } from './monitoring/monitoring.module';
 import { MonitoringMiddleware } from './monitoring/monitoring.middleware';
-import { NotificationService } from './notifications/notification.service';
-import { UrlValidator } from './utils/url-validator';
-import { HttpExceptionFilter } from './filters/http-exception.filter';
+import { NotificationModule } from './notifications/notification.module';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { APP_FILTER } from '@nestjs/core';
-import { MonitoringService } from './monitoring/monitoring.service';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    ThrottlerModule.forRoot([{
+      ttl: 60,
+      limit: 100,
+    }]),
+    ConfigModule,
     PrismaModule,
     AuthModule,
     TravelProjectModule,
     MonitoringModule,
+    NotificationModule,
   ],
   providers: [
-    NotificationService,
-    UrlValidator,
-    MonitoringService,
     {
       provide: APP_FILTER,
       useClass: HttpExceptionFilter,

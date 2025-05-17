@@ -1,32 +1,41 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
+import compression from 'compression';
 import { ConfigService } from '@nestjs/config';
-import { Logger } from '@nestjs/common';
+import { PrismaService } from './prisma/prisma.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
-  const logger = new Logger('Bootstrap');
 
-  // Configuration CORS
+  // Configuration de base
   app.enableCors({
     origin: configService.get('FRONTEND_URL'),
     credentials: true,
   });
-
-  // Middleware
+  app.use(helmet());
+  app.use(compression());
   app.use(cookieParser());
+  app.useGlobalPipes(new ValidationPipe());
 
-  // Pipes globaux
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    transform: true,
-  }));
+  // Configuration Swagger
+  const config = new DocumentBuilder()
+    .setTitle('iTravel API')
+    .setDescription('The iTravel API documentation')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document);
 
-  const port = process.env.PORT || 3000;
-  await app.listen(port);
-  logger.log(`Application is running on: http://localhost:${port}`);
+  // Gestion de la base de données
+  const prismaService = app.get(PrismaService);
+  await prismaService.$connect();
+
+  await app.listen(3000);
 }
 bootstrap();

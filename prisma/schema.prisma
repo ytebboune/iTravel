@@ -738,3 +738,18 @@ model StoryView {
   @@index([storyId])
   @@map("story_views")
 }
+
+model AuthLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  email     String
+  ipAddress String
+  userAgent String
+  success   Boolean
+  reason    String?
+  timestamp DateTime @default(now())
+
+  @@index([email, timestamp])
+  @@index([ipAddress, timestamp])
+  @@index([userId, timestamp])
+}

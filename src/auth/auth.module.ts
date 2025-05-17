@@ -1,31 +1,41 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { AuthService } from './auth.service';
+import { PassportModule } from '@nestjs/passport';
+import { ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
 import { TokenService } from './token.service';
-import { EmailModule } from '../email/email.module';
-import { PrismaModule } from '../prisma/prisma.module';
-import { AuthGuard } from './auth.guard';
 import { AppleAuthService } from './apple-auth.service';
+import { JwtStrategy } from './strategies/jwt.strategy';
+import { PrismaModule } from '../prisma/prisma.module';
+import { EmailModule } from '../email/email.module';
+import { AuthLoggerService } from './services/auth-logger.service';
+import { SuspiciousActivityService } from './services/suspicious-activity.service';
 
 @Module({
   imports: [
     PrismaModule,
     EmailModule,
+    PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
         secret: configService.get('JWT_SECRET'),
         signOptions: {
-          expiresIn: '15m',
+          expiresIn: '1h',
         },
       }),
-      inject: [ConfigService],
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, TokenService, AuthGuard, AppleAuthService],
-  exports: [AuthGuard, AuthService],
+  providers: [
+    AuthService,
+    TokenService,
+    AppleAuthService,
+    JwtStrategy,
+    AuthLoggerService,
+    SuspiciousActivityService,
+  ],
+  exports: [AuthService, TokenService],
 })
 export class AuthModule {}

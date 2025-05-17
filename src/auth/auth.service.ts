@@ -11,6 +11,8 @@ import { OAuth2Client } from 'google-auth-library';
 import { AppleAuthService } from './apple-auth.service';
 import { UAParser } from 'ua-parser-js';
 import { User, Prisma } from '@prisma/client';
+import { AuthLoggerService } from './services/auth-logger.service';
+import { SuspiciousActivityService } from './services/suspicious-activity.service';
 
 @Injectable()
 export class AuthService {
@@ -23,6 +25,8 @@ export class AuthService {
     private readonly appleAuthService: AppleAuthService,
     private readonly tokenService: TokenService,
     private readonly emailService: EmailService,
+    private readonly authLogger: AuthLoggerService,
+    private readonly suspiciousActivity: SuspiciousActivityService,
   ) {
     this.googleClient = new OAuth2Client(
       this.configService.get('GOOGLE_CLIENT_ID'),
@@ -71,6 +75,15 @@ export class AuthService {
     // Générer le token de vérification
     const verificationToken = await this.tokenService.createVerificationToken(user.id);
     await this.emailService.sendVerificationEmail(email, verificationToken);
+
+    // Journaliser l'inscription
+    await this.authLogger.logAuthAttempt(
+      user.id,
+      email,
+      registerDto.ipAddress,
+      userAgent,
+      true
+    );
 
     // Générer les tokens d'authentification
     const { accessToken, refreshToken } = await this.generateTokens(user);
@@ -178,8 +191,8 @@ export class AuthService {
     return { message: 'Password reset successfully' };
   }
 
-  async refreshToken(refreshToken: string) {
-    const userId = await this.tokenService.verifyRefreshToken(refreshToken);
+  async refreshToken(token: string) {
+    const userId = await this.tokenService.verifyRefreshToken(token);
     
     if (!userId) {
       throw new UnauthorizedException('Invalid refresh token');
@@ -194,12 +207,12 @@ export class AuthService {
     }
 
     // Révoquer l'ancien token
-    await this.tokenService.deleteRefreshToken(refreshToken);
+    await this.tokenService.deleteRefreshToken(token);
 
     // Générer de nouveaux tokens
-    const tokens = await this.generateTokens(user);
+    const { accessToken, refreshToken } = await this.generateTokens(user);
 
-    return tokens;
+    return { accessToken, refreshToken };
   }
 
   async logout(refreshToken: string) {
