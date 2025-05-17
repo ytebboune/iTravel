@@ -12,6 +12,7 @@ async function testDatabaseChanges() {
       data: {
         email: 'test@example.com',
         username: 'testuser',
+        password: 'hashedpassword123',
       },
     });
     console.log('✅ Utilisateur créé:', user);

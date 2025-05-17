@@ -1,0 +1,174 @@
+{
+  "countries": [
+    {
+      "name": "France",
+      "code": "FR",
+      "flag": "🇫🇷",
+      "cities": [
+        "Paris",
+        "Marseille",
+        "Lyon",
+        "Toulouse",
+        "Nice",
+        "Nantes",
+        "Strasbourg",
+        "Montpellier",
+        "Bordeaux",
+        "Lille"
+      ]
+    },
+    {
+      "name": "Espagne",
+      "code": "ES",
+      "flag": "🇪🇸",
+      "cities": [
+        "Madrid",
+        "Barcelone",
+        "Valence",
+        "Séville",
+        "Zaragoza",
+        "Malaga",
+        "Murcie",
+        "Palma",
+        "Las Palmas",
+        "Bilbao"
+      ]
+    },
+    {
+      "name": "Italie",
+      "code": "IT",
+      "flag": "🇮🇹",
+      "cities": [
+        "Rome",
+        "Milan",
+        "Naples",
+        "Turin",
+        "Palerme",
+        "Gênes",
+        "Bologne",
+        "Florence",
+        "Bari",
+        "Catane"
+      ]
+    },
+    {
+      "name": "Royaume-Uni",
+      "code": "GB",
+      "flag": "🇬🇧",
+      "cities": [
+        "Londres",
+        "Birmingham",
+        "Manchester",
+        "Glasgow",
+        "Liverpool",
+        "Edimbourg",
+        "Bristol",
+        "Cardiff",
+        "Belfast",
+        "Leicester"
+      ]
+    },
+    {
+      "name": "Allemagne",
+      "code": "DE",
+      "flag": "🇩🇪",
+      "cities": [
+        "Berlin",
+        "Hambourg",
+        "Munich",
+        "Cologne",
+        "Francfort",
+        "Stuttgart",
+        "Düsseldorf",
+        "Leipzig",
+        "Dortmund",
+        "Essen"
+      ]
+    },
+    {
+      "name": "Portugal",
+      "code": "PT",
+      "flag": "🇵🇹",
+      "cities": [
+        "Lisbonne",
+        "Porto",
+        "Braga",
+        "Coimbra",
+        "Funchal",
+        "Setúbal",
+        "Aveiro",
+        "Faro",
+        "Ponta Delgada",
+        "Viseu"
+      ]
+    },
+    {
+      "name": "Grèce",
+      "code": "GR",
+      "flag": "🇬🇷",
+      "cities": [
+        "Athènes",
+        "Thessalonique",
+        "Patras",
+        "Héraklion",
+        "Larissa",
+        "Volos",
+        "Rhodes",
+        "Ioannina",
+        "Chania",
+        "Chalcis"
+      ]
+    },
+    {
+      "name": "Pays-Bas",
+      "code": "NL",
+      "flag": "🇳🇱",
+      "cities": [
+        "Amsterdam",
+        "Rotterdam",
+        "La Haye",
+        "Utrecht",
+        "Eindhoven",
+        "Groningue",
+        "Tilbourg",
+        "Almere",
+        "Breda",
+        "Nimègue"
+      ]
+    },
+    {
+      "name": "Belgique",
+      "code": "BE",
+      "flag": "🇧🇪",
+      "cities": [
+        "Bruxelles",
+        "Anvers",
+        "Gand",
+        "Charleroi",
+        "Liège",
+        "Bruges",
+        "Namur",
+        "Louvain",
+        "Mons",
+        "Courtrai"
+      ]
+    },
+    {
+      "name": "Suisse",
+      "code": "CH",
+      "flag": "🇨🇭",
+      "cities": [
+        "Zurich",
+        "Genève",
+        "Bâle",
+        "Berne",
+        "Lausanne",
+        "Winterthour",
+        "Saint-Gall",
+        "Lugano",
+        "Bienne",
+        "Thoune"
+      ]
+    }
+  ]
+} 
