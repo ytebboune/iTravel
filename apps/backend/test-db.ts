@@ -34,7 +34,7 @@ async function testDatabaseChanges() {
     const transport = await prisma.transportOption.create({
       data: {
         projectId: project.id,
-        type: 'FLIGHT',
+        type: 'PLANE',
         departure: 'Paris',
         arrival: 'New York',
         date: new Date(),

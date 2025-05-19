@@ -1,9 +1,11 @@
-import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { NotificationService } from '../../../notifications/notification.service';
-import { NotificationType } from '../../../notifications/notification.types';
+import { NotificationType } from '@itravel/shared';
 import { WebsocketGateway } from '../../../websocket/websocket.gateway';
 import { TravelProject } from '@prisma/client';
+import { CreatePlanningDto } from './dto/create-planning.dto';
+import { AddActivityToPlanningDto } from './dto/add-activity-to-planning.dto';
 
 @Injectable()
 export class PlanningService {
@@ -25,36 +27,124 @@ export class PlanningService {
       throw new NotFoundException('Project not found');
     }
 
-    const isMember = project.creatorId === userId || 
-      project.participants.some(p => p.userId === userId);
-
-    if (!isMember) {
-      throw new ForbiddenException('You are not a member of this project');
+    if (project.creatorId !== userId && !project.participants.some(p => p.userId === userId)) {
+      throw new ForbiddenException('User is not a member of this project');
     }
 
     return project;
   }
 
-  async addActivityToPlanning(
-    projectId: string,
-    userId: string,
-    data: {
-      activityId?: string;
-      date: Date;
-      startTime: Date;
-      endTime: Date;
-      notes?: string;
-    },
-  ) {
+  async create(projectId: string, userId: string, createPlanningDto: CreatePlanningDto) {
     await this.authorize(projectId, userId);
+
+    const planning = await this.prisma.planning.create({
+      data: {
+        projectId,
+        name: createPlanningDto.name,
+        description: createPlanningDto.description,
+      },
+    });
+
+    await this.notificationService.notify(NotificationType.PLANNING_ACTIVITY_ADDED, {
+      projectId,
+      userId,
+      data: {
+        planningId: planning.id,
+      },
+    });
+
+    this.websocketGateway.server.to(projectId).emit('planning:created', planning);
+
+    return planning;
+  }
+
+  async getPlanning(projectId: string, userId: string) {
+    await this.authorize(projectId, userId);
+
+    return this.prisma.planning.findFirst({
+      where: { projectId },
+      include: {
+        activities: {
+          include: {
+            activity: true,
+          },
+          orderBy: [
+            { date: 'asc' },
+            { startTime: 'asc' },
+          ],
+        },
+      },
+    });
+  }
+
+  private async checkActivityConflict(
+    projectId: string,
+    date: Date,
+    startTime: Date,
+    endTime: Date,
+    excludeActivityId?: string,
+  ): Promise<boolean> {
+    const where = {
+      projectId,
+      date,
+      OR: [
+        {
+          AND: [
+            { startTime: { lte: startTime } },
+            { endTime: { gte: startTime } },
+          ],
+        },
+        {
+          AND: [
+            { startTime: { lte: endTime } },
+            { endTime: { gte: endTime } },
+          ],
+        },
+        {
+          AND: [
+            { startTime: { gte: startTime } },
+            { endTime: { lte: endTime } },
+          ],
+        },
+      ],
+    };
+
+    if (excludeActivityId) {
+      where['id'] = { not: excludeActivityId };
+    }
+
+    const conflictingActivity = await this.prisma.planningActivity.findFirst({ where });
+    return !!conflictingActivity;
+  }
+
+  async addActivityToPlanning(projectId: string, userId: string, data: AddActivityToPlanningDto) {
+    await this.authorize(projectId, userId);
+
+    const date = new Date(data.date);
+    const startTime = new Date(data.startTime);
+    const endTime = new Date(data.endTime);
+
+    const hasConflict = await this.checkActivityConflict(projectId, date, startTime, endTime);
+    if (hasConflict) {
+      throw new ConflictException('Cette activité chevauche une autre activité existante');
+    }
+
+    const planning = await this.prisma.planning.findFirst({
+      where: { projectId },
+    });
+
+    if (!planning) {
+      throw new NotFoundException('Planning not found for this project');
+    }
 
     const planningActivity = await this.prisma.planningActivity.create({
       data: {
-        projectId,
-        activityId: data.activityId,
-        date: data.date,
-        startTime: data.startTime,
-        endTime: data.endTime,
+        project: { connect: { id: projectId } },
+        planning: { connect: { id: planning.id } },
+        activity: data.activityId ? { connect: { id: data.activityId } } : undefined,
+        date,
+        startTime,
+        endTime,
         notes: data.notes,
       },
       include: {
@@ -62,113 +152,83 @@ export class PlanningService {
       },
     });
 
-    this.websocketGateway.server
-      .to(`project:${projectId}`)
-      .emit('planningActivityAdded', {
-        type: 'planning',
-        projectId,
-        planningActivity,
-      });
-
     await this.notificationService.notify(NotificationType.PLANNING_ACTIVITY_ADDED, {
       projectId,
       userId,
       data: {
-        message: 'New activity added to planning',
         planningActivityId: planningActivity.id,
       },
     });
+
+    this.websocketGateway.server.to(projectId).emit('planning:activity_added', planningActivity);
 
     return planningActivity;
   }
 
   async updatePlanningActivity(
     projectId: string,
-    planningActivityId: string,
+    activityId: string,
     userId: string,
-    data: {
-      date?: Date;
-      startTime?: Date;
-      endTime?: Date;
-      notes?: string;
-    },
+    data: AddActivityToPlanningDto,
   ) {
     await this.authorize(projectId, userId);
 
+    const date = new Date(data.date);
+    const startTime = new Date(data.startTime);
+    const endTime = new Date(data.endTime);
+
+    const hasConflict = await this.checkActivityConflict(projectId, date, startTime, endTime, activityId);
+    if (hasConflict) {
+      throw new ConflictException('Cette activité chevauche une autre activité existante');
+    }
+
     const planningActivity = await this.prisma.planningActivity.update({
-      where: { id: planningActivityId },
-      data,
+      where: { id: activityId },
+      data: {
+        activity: data.activityId ? { connect: { id: data.activityId } } : undefined,
+        date,
+        startTime,
+        endTime,
+        notes: data.notes,
+      },
       include: {
         activity: true,
       },
     });
-
-    this.websocketGateway.server
-      .to(`project:${projectId}`)
-      .emit('planningActivityUpdated', {
-        type: 'planning',
-        projectId,
-        planningActivity,
-      });
 
     await this.notificationService.notify(NotificationType.PLANNING_ACTIVITY_UPDATED, {
       projectId,
       userId,
       data: {
-        message: 'Planning activity updated',
         planningActivityId: planningActivity.id,
       },
     });
 
+    this.websocketGateway.server.to(projectId).emit('planning:activity_updated', planningActivity);
+
     return planningActivity;
   }
 
-  async removeActivityFromPlanning(
-    projectId: string,
-    planningActivityId: string,
-    userId: string,
-  ) {
+  async removeActivityFromPlanning(projectId: string, activityId: string, userId: string) {
     await this.authorize(projectId, userId);
 
     const planningActivity = await this.prisma.planningActivity.delete({
-      where: { id: planningActivityId },
+      where: { id: activityId },
       include: {
         activity: true,
       },
     });
-
-    this.websocketGateway.server
-      .to(`project:${projectId}`)
-      .emit('planningActivityRemoved', {
-        type: 'planning',
-        projectId,
-        planningActivityId,
-      });
 
     await this.notificationService.notify(NotificationType.PLANNING_ACTIVITY_REMOVED, {
       projectId,
       userId,
       data: {
-        message: 'Activity removed from planning',
-        planningActivityId,
+        planningActivityId: activityId,
       },
     });
+
+    this.websocketGateway.server.to(projectId).emit('planning:activity_removed', { activityId });
 
     return planningActivity;
-  }
-
-  async getPlanning(projectId: string, userId: string) {
-    await this.authorize(projectId, userId);
-
-    return this.prisma.planningActivity.findMany({
-      where: { projectId },
-      include: {
-        activity: true,
-      },
-      orderBy: [
-        { date: 'asc' },
-        { startTime: 'asc' },
-      ],
-    });
   }
 } 

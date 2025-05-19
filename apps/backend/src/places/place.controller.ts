@@ -1,56 +1,78 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, UseGuards, Delete, Put, Query } from '@nestjs/common';
 import { PlaceService } from './place.service';
+import { AuthGuard } from '../auth/auth.guard';
+import { GetUser } from '../auth/decorators/get-user.decorator';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { CreateVisitedPlaceDto } from './dto/create-visited-place.dto';
 import { UpdateVisitedPlaceDto } from './dto/update-visited-place.dto';
-import { AuthGuard } from '../auth/auth.guard';
 
+@ApiTags('places')
+@ApiBearerAuth()
 @Controller('places')
 @UseGuards(AuthGuard)
 export class PlaceController {
-  constructor(private readonly placeService: PlaceService) {}
+  constructor(private readonly service: PlaceService) {}
 
-  @Post('visited')
-  async markPlaceAsVisited(
-    @Request() req,
+  @Post()
+  @ApiOperation({ summary: 'Créer un lieu visité' })
+  @ApiBody({ type: CreateVisitedPlaceDto })
+  @ApiResponse({ status: 201, description: 'Lieu visité créé avec succès' })
+  async create(
+    @GetUser('id') userId: string,
     @Body() createVisitedPlaceDto: CreateVisitedPlaceDto,
   ) {
-    return this.placeService.markPlaceAsVisited(req.user.sub, createVisitedPlaceDto);
+    return this.service.create(userId, createVisitedPlaceDto);
   }
 
-  @Put('visited/:id')
-  async updateVisitedPlace(
-    @Request() req,
-    @Param('id') placeId: string,
+  @Get()
+  @ApiOperation({ summary: 'Récupérer tous les lieux visités' })
+  @ApiResponse({ status: 200, description: 'Liste des lieux visités' })
+  async findAll(@GetUser('id') userId: string) {
+    return this.service.findAll(userId);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Récupérer un lieu visité' })
+  @ApiParam({ name: 'id', description: 'ID du lieu visité' })
+  @ApiResponse({ status: 200, description: 'Lieu visité trouvé' })
+  async findOne(
+    @Param('id') id: string,
+    @GetUser('id') userId: string,
+  ) {
+    return this.service.findOne(id, userId);
+  }
+
+  @Put(':id')
+  @ApiOperation({ summary: 'Mettre à jour un lieu visité' })
+  @ApiParam({ name: 'id', description: 'ID du lieu visité' })
+  @ApiBody({ type: UpdateVisitedPlaceDto })
+  @ApiResponse({ status: 200, description: 'Lieu visité mis à jour avec succès' })
+  async update(
+    @Param('id') id: string,
+    @GetUser('id') userId: string,
     @Body() updateVisitedPlaceDto: UpdateVisitedPlaceDto,
   ) {
-    return this.placeService.updateVisitedPlace(req.user.sub, placeId, updateVisitedPlaceDto);
+    return this.service.update(id, userId, updateVisitedPlaceDto);
   }
 
-  @Delete('visited/:id')
-  async deleteVisitedPlace(
-    @Request() req,
-    @Param('id') placeId: string,
+  @Delete(':id')
+  @ApiOperation({ summary: 'Supprimer un lieu visité' })
+  @ApiParam({ name: 'id', description: 'ID du lieu visité' })
+  @ApiResponse({ status: 200, description: 'Lieu visité supprimé avec succès' })
+  async remove(
+    @Param('id') id: string,
+    @GetUser('id') userId: string,
   ) {
-    return this.placeService.deleteVisitedPlace(req.user.sub, placeId);
+    return this.service.remove(id, userId);
   }
 
-  @Get('visited')
-  async getUserVisitedPlaces(@Request() req) {
-    return this.placeService.getUserVisitedPlaces(req.user.sub);
-  }
-
-  @Get('cities/:id/visitors')
-  async getCityVisitors(@Param('id') cityId: string) {
-    return this.placeService.getCityVisitors(cityId);
-  }
-
-  @Get('countries/:id/visitors')
-  async getCountryVisitors(@Param('id') countryId: string) {
-    return this.placeService.getCountryVisitors(countryId);
-  }
-
-  @Get('popular')
-  async getPopularPlaces(@Query('limit') limit?: number) {
-    return this.placeService.getPopularPlaces(limit);
+  @Get('search')
+  @ApiOperation({ summary: 'Rechercher des lieux' })
+  @ApiResponse({ status: 200, description: 'Liste des lieux trouvés' })
+  async search(
+    @Query('query') query: string,
+    @GetUser('id') userId: string,
+  ) {
+    return this.service.search(query, userId);
   }
 } 

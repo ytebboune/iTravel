@@ -20,6 +20,15 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  // Paramètres de confidentialité
+  showEmail         Boolean @default(true)
+  showVisitedPlaces Boolean @default(true)
+  showPosts         Boolean @default(true)
+  showStories       Boolean @default(true)
+
+  // Paramètres de notification
+  notificationSettings Json @default("{}")
+
   // Relations sociales
   followers     Follow[]  @relation("Following")
   following     Follow[]  @relation("Followers")
@@ -220,7 +229,8 @@ model TravelProject {
   transportOptions TransportOption[]
   transportVotes TransportVote[]
   accommodationVotes AccommodationVote[]
-  planning     PlanningActivity[]
+  planningActivities PlanningActivity[]
+  plannings   Planning[]
   activityVotes ActivityVote[]
 
   @@index([creatorId])
@@ -231,7 +241,7 @@ model TravelProject {
 enum ProjectStatus {
   DRAFT      @map("draft")      /// Brouillon
   PLANNING   @map("planning")   /// En cours de planification
-  CONFIRMED  @map("confirmed")  /// Confirmé
+  IN_PROGRESS @map("in_progress") /// En cours
   COMPLETED  @map("completed")  /// Terminé
   CANCELLED  @map("cancelled")  /// Annulé
 }
@@ -304,12 +314,12 @@ model TransportOption {
 
 /// Type de transport
 enum TransportType {
-  FLIGHT   @map("flight")   /// Avion
-  TRAIN    @map("train")    /// Train
-  BUS      @map("bus")      /// Bus
-  CARPOOL  @map("carpool")  /// Covoiturage
-  FERRY    @map("ferry")    /// Ferry
-  OTHER    @map("other")    /// Autre
+  PLANE
+  TRAIN
+  BUS
+  CAR
+  BOAT
+  OTHER
 }
 
 /// Vote sur une option de transport
@@ -630,6 +640,7 @@ model PredefinedActivity {
 model PlanningActivity {
   id          String   @id @default(uuid())
   projectId   String
+  planningId  String
   activityId  String?  // Optionnel car peut être une activité personnalisée
   date        DateTime
   startTime   DateTime
@@ -641,10 +652,27 @@ model PlanningActivity {
   // Relations
   project     TravelProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
   activity    Activity?    @relation(fields: [activityId], references: [id], onDelete: SetNull)
+  planning    Planning     @relation(fields: [planningId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
   @@index([activityId])
+  @@index([planningId])
   @@map("planning_activities")
+}
+
+model Planning {
+  id          String   @id @default(uuid())
+  projectId   String
+  name        String?
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project   TravelProject     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  activities PlanningActivity[]
+
+  @@index([projectId])
+  @@map("plannings")
 }
 
 // Nouveau modèle pour les demandes de follow

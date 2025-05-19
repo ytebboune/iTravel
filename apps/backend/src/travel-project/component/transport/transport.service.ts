@@ -5,15 +5,14 @@ import { TransportVoteDto } from './dto/transport-vote.dto';
 import { AddTransportCommentDto } from './dto/add-transport-comment.dto';
 import { extractTransportInfoFromUrl } from './utils/transport-scraper';
 import { NotificationService } from '../../../notifications/notification.service';
-import { NotificationType } from '../../../notifications/notification.types';
+import { NotificationType, TransportType, SortField, SortOrder } from '@itravel/shared';
 import { UrlValidator } from '../../../utils/url-validator';
 import { MonitoringService } from '../../../monitoring/monitoring.service';
-import { SortTransportDto, SortField, SortOrder } from './dto/sort-transport.dto';
-import { Prisma } from '@prisma/client';
+import { SortTransportDto } from './dto/sort-transport.dto';
+import { Prisma, TransportOption, TransportVote, TravelProject } from '@prisma/client';
 import { WebsocketGateway } from '../../../websocket/websocket.gateway';
 import { CommentEvent, VoteEvent, SelectionEvent } from '../../../websocket/websocket.types';
 import { Decimal } from '@prisma/client/runtime/library';
-import { TransportOption, TransportVote, TravelProject } from '@prisma/client';
 
 interface TransportScore {
   voteScore: number;
@@ -80,17 +79,27 @@ export class TransportService {
   
     const transport = await this.prisma.transportOption.create({
       data: {
-        ...dto,
-        ...autoData,
         projectId,
         addedBy: userId,
+        type: dto.type,
+        departure: dto.departure,
+        arrival: dto.arrival,
+        date: new Date(dto.date),
+        duration: dto.duration,
+        price: dto.price,
+        link: dto.link,
+        company: dto.company,
+        flightNumber: dto.flightNumber,
+        baggageIncluded: dto.baggageIncluded,
+        nbStops: dto.nbStops,
+        seatInfo: dto.seatInfo,
       },
     });
 
     this.logger.log(`Transport option created with ID: ${transport.id}`);
 
     // Notification de création
-    await this.notificationService.notify(NotificationType.PROJECT_CREATED, {
+    await this.notificationService.notify(NotificationType.TRANSPORT_SELECTED, {
       projectId,
       transportId: transport.id,
       userId,

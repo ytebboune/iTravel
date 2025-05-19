@@ -1,7 +1,7 @@
 import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { NotificationService } from '../../../notifications/notification.service';
-import { NotificationType } from '../../../notifications/notification.types';
+import { NotificationType } from '@itravel/shared';
 import { WebsocketGateway } from '../../../websocket/websocket.gateway';
 import { CommentEvent, VoteEvent, SelectionEvent } from '../../../websocket/websocket.types';
 import { DateSuggestion, DateVote, TravelProject, Prisma } from '@prisma/client';

@@ -1,5 +1,5 @@
 import { IsOptional, IsString, IsEnum, IsArray, IsUUID } from 'class-validator';
-import { ProjectStatus } from '../enums/project-status.enum';
+import { ProjectStatus } from '@itravel/shared';
 
 export class UpdateTravelProjectDto {
   @IsOptional()

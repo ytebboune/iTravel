@@ -3,13 +3,20 @@ import { DestinationService } from './destination.service';
 import { AuthGuard } from '../../../auth/auth.guard';
 import { AddCommentDto } from './dto/add-comment.dto';
 import { VoteDto } from './dto/vote.dto';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
 
+@ApiTags('destination')
 @Controller('projects/:projectId/destinations')
 @UseGuards(AuthGuard)
 export class DestinationController {
   constructor(private readonly service: DestinationService) {}
 
   @Post(':id/comments')
+  @ApiOperation({ summary: 'Add a comment to a destination' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'id', description: 'Destination ID' })
+  @ApiBody({ type: AddCommentDto })
+  @ApiResponse({ status: 201, description: 'Comment added successfully' })
   addComment(
     @Param('projectId') projectId: string,
     @Param('id') destinationId: string,
@@ -20,6 +27,10 @@ export class DestinationController {
   }
 
   @Get(':id/comments')
+  @ApiOperation({ summary: 'Get all comments for a destination' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'id', description: 'Destination ID' })
+  @ApiResponse({ status: 200, description: 'List of comments' })
   getComments(
     @Param('projectId') projectId: string,
     @Param('id') destinationId: string,
@@ -29,6 +40,11 @@ export class DestinationController {
   }
 
   @Post(':id/vote')
+  @ApiOperation({ summary: 'Vote on a destination' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'id', description: 'Destination ID' })
+  @ApiBody({ type: VoteDto })
+  @ApiResponse({ status: 201, description: 'Vote recorded successfully' })
   vote(
     @Param('projectId') projectId: string,
     @Param('id') destinationId: string,
@@ -39,6 +55,10 @@ export class DestinationController {
   }
 
   @Get(':id/votes')
+  @ApiOperation({ summary: 'Get all votes for a destination' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'id', description: 'Destination ID' })
+  @ApiResponse({ status: 200, description: 'List of votes' })
   getVotes(
     @Param('projectId') projectId: string,
     @Param('id') destinationId: string,
@@ -48,6 +68,10 @@ export class DestinationController {
   }
 
   @Post(':id/validate')
+  @ApiOperation({ summary: 'Validate a destination' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'id', description: 'Destination ID' })
+  @ApiResponse({ status: 200, description: 'Destination validated successfully' })
   validate(
     @Param('projectId') projectId: string,
     @Param('id') destinationId: string,
@@ -57,6 +81,10 @@ export class DestinationController {
   }
 
   @Post(':id/unvalidate')
+  @ApiOperation({ summary: 'Unvalidate a destination' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'id', description: 'Destination ID' })
+  @ApiResponse({ status: 200, description: 'Destination unvalidated successfully' })
   unvalidate(
     @Param('projectId') projectId: string,
     @Param('id') destinationId: string,

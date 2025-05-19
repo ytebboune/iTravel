@@ -1,54 +1,62 @@
-import { Controller, Get, Put, Post, Body, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, UseGuards, Delete, Put } from '@nestjs/common';
 import { SettingsService } from './settings.service';
+import { AuthGuard } from '../auth/auth.guard';
+import { GetUser } from '../auth/decorators/get-user.decorator';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import { UpdatePrivacyDto } from './dto/update-privacy.dto';
-import { AuthGuard } from '../auth/auth.guard';
 
+@ApiTags('settings')
+@ApiBearerAuth()
 @Controller('settings')
 @UseGuards(AuthGuard)
 export class SettingsController {
-  constructor(private readonly settingsService: SettingsService) {}
+  constructor(private readonly service: SettingsService) {}
+
+  @Get()
+  @ApiOperation({ summary: 'Récupérer les paramètres de l\'utilisateur' })
+  @ApiResponse({ status: 200, description: 'Paramètres récupérés avec succès' })
+  async getSettings(@GetUser('id') userId: string) {
+    return this.service.getSettings(userId);
+  }
 
   @Put('password')
+  @ApiOperation({ summary: 'Mettre à jour le mot de passe' })
+  @ApiBody({ type: UpdatePasswordDto })
+  @ApiResponse({ status: 200, description: 'Mot de passe mis à jour avec succès' })
   async updatePassword(
-    @Request() req,
+    @GetUser('id') userId: string,
     @Body() updatePasswordDto: UpdatePasswordDto,
   ) {
-    return this.settingsService.updatePassword(req.user.sub, updatePasswordDto);
+    return this.service.updatePassword(userId, updatePasswordDto);
   }
 
   @Put('privacy')
+  @ApiOperation({ summary: 'Mettre à jour les paramètres de confidentialité' })
+  @ApiBody({ type: UpdatePrivacyDto })
+  @ApiResponse({ status: 200, description: 'Paramètres de confidentialité mis à jour avec succès' })
   async updatePrivacy(
-    @Request() req,
+    @GetUser('id') userId: string,
     @Body() updatePrivacyDto: UpdatePrivacyDto,
   ) {
-    return this.settingsService.updatePrivacy(req.user.sub, updatePrivacyDto);
+    return this.service.updatePrivacy(userId, updatePrivacyDto);
   }
 
-  @Get('privacy')
-  async getPrivacySettings(@Request() req) {
-    return this.settingsService.getPrivacySettings(req.user.sub);
-  }
-
-  @Post('follow-requests/:userId')
-  async requestFollow(
-    @Request() req,
-    @Param('userId') requestedToId: string,
+  @Put('notifications')
+  @ApiOperation({ summary: 'Mettre à jour les paramètres de notification' })
+  @ApiBody({ schema: { properties: { email: { type: 'boolean' }, push: { type: 'boolean' } } } })
+  @ApiResponse({ status: 200, description: 'Paramètres de notification mis à jour avec succès' })
+  async updateNotificationSettings(
+    @GetUser('id') userId: string,
+    @Body() settings: { email: boolean; push: boolean },
   ) {
-    return this.settingsService.requestFollow(req.user.sub, requestedToId);
+    return this.service.updateNotificationSettings(userId, settings);
   }
 
-  @Post('follow-requests/:requestId/handle')
-  async handleFollowRequest(
-    @Request() req,
-    @Param('requestId') requestId: string,
-    @Body('accept') accept: boolean,
-  ) {
-    return this.settingsService.handleFollowRequest(req.user.sub, requestId, accept);
-  }
-
-  @Get('follow-requests')
-  async getFollowRequests(@Request() req) {
-    return this.settingsService.getFollowRequests(req.user.sub);
+  @Delete('account')
+  @ApiOperation({ summary: 'Supprimer le compte' })
+  @ApiResponse({ status: 200, description: 'Compte supprimé avec succès' })
+  async deleteAccount(@GetUser('id') userId: string) {
+    return this.service.deleteAccount(userId);
   }
 } 

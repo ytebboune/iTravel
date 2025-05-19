@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { NotificationType } from './notification.types';
+import { NotificationType } from '@itravel/shared';
 
 @Injectable()
 export class NotificationService {
@@ -16,14 +16,14 @@ export class NotificationService {
   }
 
   async notifyProjectCreated(projectId: string, creatorId: string) {
-    await this.notify(NotificationType.PROJECT_CREATED, {
+    await this.notify(NotificationType.PROJECT_INVITATION, {
       projectId,
       creatorId,
     });
   }
 
   async notifyParticipantAdded(projectId: string, userId: string) {
-    await this.notify(NotificationType.PARTICIPANT_ADDED, {
+    await this.notify(NotificationType.PROJECT_UPDATE, {
       projectId,
       userId,
     });

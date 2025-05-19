@@ -1,12 +1,46 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationService } from '../notifications/notification.service';
+import { NotificationType } from '@itravel/shared';
+import { WebsocketGateway } from '../websocket/websocket.gateway';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import { UpdatePrivacyDto } from './dto/update-privacy.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class SettingsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationService: NotificationService,
+    private readonly websocketGateway: WebsocketGateway,
+  ) {}
+
+  async getSettings(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        showEmail: true,
+        showVisitedPlaces: true,
+        showPosts: true,
+        showStories: true,
+        notificationSettings: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return {
+      privacy: {
+        showEmail: user.showEmail,
+        showVisitedPlaces: user.showVisitedPlaces,
+        showPosts: user.showPosts,
+        showStories: user.showStories,
+      },
+      notifications: user.notificationSettings,
+    };
+  }
 
   async updatePassword(userId: string, updatePasswordDto: UpdatePasswordDto) {
     const user = await this.prisma.user.findUnique({
@@ -33,6 +67,13 @@ export class SettingsService {
       data: { password: hashedPassword },
     });
 
+    await this.notificationService.notify(NotificationType.SYSTEM, {
+      userId,
+      data: {
+        message: 'Your password has been updated successfully',
+      },
+    });
+
     return { message: 'Password updated successfully' };
   }
 
@@ -48,18 +89,75 @@ export class SettingsService {
     const updatedUser = await this.prisma.user.update({
       where: { id: userId },
       data: {
-        isPrivate: updatePrivacyDto.isPrivate,
+        showEmail: updatePrivacyDto.showEmail,
+        showVisitedPlaces: updatePrivacyDto.showVisitedPlaces,
+        showPosts: updatePrivacyDto.showPosts,
+        showStories: updatePrivacyDto.showStories,
       },
     });
 
-    return updatedUser;
+    this.websocketGateway.server.to(userId).emit('settings:privacy_updated', {
+      showEmail: updatedUser.showEmail,
+      showVisitedPlaces: updatedUser.showVisitedPlaces,
+      showPosts: updatedUser.showPosts,
+      showStories: updatedUser.showStories,
+    });
+
+    return {
+      showEmail: updatedUser.showEmail,
+      showVisitedPlaces: updatedUser.showVisitedPlaces,
+      showPosts: updatedUser.showPosts,
+      showStories: updatedUser.showStories,
+    };
+  }
+
+  async updateNotificationSettings(userId: string, settings: any) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        notificationSettings: settings,
+      },
+    });
+
+    this.websocketGateway.server.to(userId).emit('settings:notifications_updated', updatedUser.notificationSettings);
+
+    return updatedUser.notificationSettings;
+  }
+
+  async deleteAccount(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    await this.prisma.user.delete({
+      where: { id: userId },
+    });
+
+    this.websocketGateway.server.to(userId).emit('settings:account_deleted');
+
+    return { message: 'Account deleted successfully' };
   }
 
   async getPrivacySettings(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
-        isPrivate: true,
+        showEmail: true,
+        showVisitedPlaces: true,
+        showPosts: true,
+        showStories: true,
         followers: {
           select: {
             follower: {
@@ -90,7 +188,10 @@ export class SettingsService {
     }
 
     return {
-      isPrivate: user.isPrivate,
+      showEmail: user.showEmail,
+      showVisitedPlaces: user.showVisitedPlaces,
+      showPosts: user.showPosts,
+      showStories: user.showStories,
       followers: user.followers.map(f => f.follower),
       following: user.following.map(f => f.following),
     };
