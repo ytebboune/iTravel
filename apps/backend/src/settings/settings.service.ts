@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { NotificationService } from '../notifications/notification.service';
+import { NotificationService } from '../core/notifications/notification.service';
 import { NotificationType } from '@itravel/shared';
-import { WebsocketGateway } from '../websocket/websocket.gateway';
+import { WebsocketGateway } from '../core/websocket/websocket.gateway';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import { UpdatePrivacyDto } from './dto/update-privacy.dto';
 import * as bcrypt from 'bcrypt';

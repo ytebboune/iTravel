@@ -1,7 +1,5 @@
 import { Controller, Post, Get, Body, Param, UseGuards, Request, Delete, Put, Query } from '@nestjs/common';
 import { AccommodationService } from './accommodation.service';
-import { AuthGuard } from '../../../auth/auth.guard';
-import { GetUser } from '../../../auth/decorators/get-user.decorator';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { VoteDto } from '../destination/dto/vote.dto';
 import { FilterAccommodationDto } from './dto/filter-accommodation.dto';
@@ -10,6 +8,8 @@ import { CreateAvailabilityDto } from './dto/create-availability.dto';
 import { UpdateAvailabilityDto } from './dto/update-availability.dto';
 import { AddPhotoDto } from './dto/add-photo.dto';
 import { CreateAccommodationDto } from './dto/create-accommodation.dto';
+import { AuthGuard } from 'src/core/auth/auth.guard';
+import { GetUser } from 'src/core/auth/decorators/get-user.decorator';
 
 @ApiTags('accommodation')
 @ApiBearerAuth()

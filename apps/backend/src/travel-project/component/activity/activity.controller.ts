@@ -1,8 +1,8 @@
 import { Controller, Post, Get, Body, Param, UseGuards, Request, Delete } from '@nestjs/common';
 import { ActivityService } from './activity.service';
-import { AuthGuard } from '../../../auth/auth.guard';
 import { VoteDto } from '../destination/dto/vote.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
+import { AuthGuard } from 'src/core/auth/auth.guard';
 
 @ApiTags('activity')
 @Controller('projects/:projectId/activities')

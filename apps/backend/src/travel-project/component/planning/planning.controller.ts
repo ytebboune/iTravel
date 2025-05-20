@@ -1,10 +1,10 @@
 import { Controller, Post, Get, Body, Param, UseGuards, Delete, Put } from '@nestjs/common';
 import { PlanningService } from './planning.service';
-import { AuthGuard } from '../../../auth/auth.guard';
-import { GetUser } from '../../../auth/decorators/get-user.decorator';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { CreatePlanningDto } from './dto/create-planning.dto';
 import { AddActivityToPlanningDto } from './dto/add-activity-to-planning.dto';
+import { AuthGuard } from 'src/core/auth/auth.guard';
+import { GetUser } from 'src/core/auth/decorators/get-user.decorator';
 
 @ApiTags('planning')
 @ApiBearerAuth()

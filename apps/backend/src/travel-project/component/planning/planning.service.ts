@@ -1,11 +1,12 @@
 import { Injectable, Logger, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
-import { NotificationService } from '../../../notifications/notification.service';
 import { NotificationType } from '@itravel/shared';
-import { WebsocketGateway } from '../../../websocket/websocket.gateway';
 import { TravelProject } from '@prisma/client';
 import { CreatePlanningDto } from './dto/create-planning.dto';
 import { AddActivityToPlanningDto } from './dto/add-activity-to-planning.dto';
+import { NotificationService } from 'src/core/notifications/notification.service';
+import { WebsocketGateway } from 'src/core/websocket/websocket.gateway';
+
 
 @Injectable()
 export class PlanningService {

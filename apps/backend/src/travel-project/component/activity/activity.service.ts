@@ -1,9 +1,10 @@
 import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
-import { NotificationService } from '../../../notifications/notification.service';
 import { NotificationType } from '@itravel/shared';
-import { WebsocketGateway } from '../../../websocket/websocket.gateway';
 import { TravelProject, Activity, ActivityVote } from '@prisma/client';
+import { NotificationService } from 'src/core/notifications/notification.service';
+import { WebsocketGateway } from 'src/core/websocket/websocket.gateway';
+
 
 @Injectable()
 export class ActivityService {

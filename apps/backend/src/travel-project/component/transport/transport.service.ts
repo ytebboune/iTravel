@@ -4,15 +4,16 @@ import { CreateTransportOptionDto } from './dto/create-transport-option.dto';
 import { TransportVoteDto } from './dto/transport-vote.dto';
 import { AddTransportCommentDto } from './dto/add-transport-comment.dto';
 import { extractTransportInfoFromUrl } from './utils/transport-scraper';
-import { NotificationService } from '../../../notifications/notification.service';
 import { NotificationType, TransportType, SortField, SortOrder } from '@itravel/shared';
-import { UrlValidator } from '../../../utils/url-validator';
-import { MonitoringService } from '../../../monitoring/monitoring.service';
 import { SortTransportDto } from './dto/sort-transport.dto';
 import { Prisma, TransportOption, TransportVote, TravelProject } from '@prisma/client';
-import { WebsocketGateway } from '../../../websocket/websocket.gateway';
-import { CommentEvent, VoteEvent, SelectionEvent } from '../../../websocket/websocket.types';
+import { CommentEvent, VoteEvent, SelectionEvent } from 'src/core/websocket/websocket.types';;
 import { Decimal } from '@prisma/client/runtime/library';
+import { NotificationService } from 'src/core/notifications/notification.service';
+import { WebsocketGateway } from 'src/core/websocket/websocket.gateway';
+import { UrlValidator } from 'src/core/utils/url-validator';
+import { MonitoringService } from 'src/core/monitoring/monitoring.service';
+
 
 interface TransportScore {
   voteScore: number;

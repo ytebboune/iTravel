@@ -1,8 +1,6 @@
 import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
-import { NotificationService } from '../../../notifications/notification.service';
 import { NotificationType } from '@itravel/shared';
-import { WebsocketGateway } from '../../../websocket/websocket.gateway';
 import { TravelProject } from '@prisma/client';
 import { UrlValidator } from './utils/url-validator';
 import { extractPhotosFromUrl } from './utils/photo-scraper';
@@ -11,6 +9,8 @@ import { CreateAvailabilityDto } from './dto/create-availability.dto';
 import { UpdateAvailabilityDto } from './dto/update-availability.dto';
 import { AddCommentDto } from './dto/add-comment.dto';
 import { Prisma } from '@prisma/client';
+import { NotificationService } from 'src/core/notifications/notification.service';
+import { WebsocketGateway } from 'src/core/websocket/websocket.gateway';
 
 @Injectable()
 export class AccommodationService {

@@ -1,7 +1,6 @@
 import {
     Controller, Post, Get, Patch, Delete, Param, Body, Request, UseGuards, Query
   } from '@nestjs/common';
-import { AuthGuard } from '../../../auth/auth.guard';
 import { TransportService } from "./transport.service";
 import { AddTransportCommentDto } from "./dto/add-transport-comment.dto";
 import { CreateTransportOptionDto } from "./dto/create-transport-option.dto";
@@ -9,6 +8,7 @@ import { TransportVoteDto } from "./dto/transport-vote.dto";
 import { SortTransportDto } from './dto/sort-transport.dto';
 import { TransportType } from '@itravel/shared';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
+import { AuthGuard } from 'src/core/auth/auth.guard';
 
 @ApiTags('transport')
 @Controller('projects/:projectId/transport')

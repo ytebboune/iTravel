@@ -1,7 +1,7 @@
 import { Controller, Post, Get, Body, Param, UseGuards, Delete, Put } from '@nestjs/common';
 import { SettingsService } from './settings.service';
-import { AuthGuard } from '../auth/auth.guard';
-import { GetUser } from '../auth/decorators/get-user.decorator';
+import { AuthGuard } from '../core/auth/auth.guard';
+import { GetUser } from '../core/auth/decorators/get-user.decorator';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import { UpdatePrivacyDto } from './dto/update-privacy.dto';

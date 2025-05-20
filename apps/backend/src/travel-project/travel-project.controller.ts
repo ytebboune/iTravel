@@ -15,7 +15,7 @@ import { TravelProjectService } from './travel-project.service';
 import { CreateTravelProjectDto } from './dto/create-travel-project.dto';
 import { UpdateTravelProjectDto } from './dto/update-travel-project.dto';
 import { AddParticipantDto } from './dto/add-participant.dto';
-import { AuthGuard } from '../auth/auth.guard';
+import { AuthGuard } from '../core/auth/auth.guard';
 import { AddDestinationDto } from './dto/add-destination.dto';
 
 @Controller('travel-project')

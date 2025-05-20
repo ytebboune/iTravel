@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { DateSuggestionController } from './date-suggestion.controller';
 import { DateSuggestionService } from './date-suggestion.service';
-import { PrismaModule } from '../../../prisma/prisma.module';
-import { NotificationModule } from '../../../notifications/notification.module';
-import { WebsocketModule } from '../../../websocket/websocket.module';
-import { NotificationService } from '../../../notifications/notification.service';
-import { AuthModule } from '../../../auth/auth.module';
+import { NotificationService } from 'src/core/notifications/notification.service';
+import { PrismaModule } from 'src/prisma/prisma.module';
+import { WebsocketModule } from 'src/core/websocket/websocket.module';
+import { NotificationModule } from 'src/core/notifications/notification.module';
+import { AuthModule } from 'src/core/auth/auth.module';
 
 @Module({
   imports: [

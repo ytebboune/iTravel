@@ -1,9 +1,9 @@
 import { Controller, Post, Get, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { DateSuggestionService } from './date-suggestion.service';
-import { AuthGuard } from '../../../auth/auth.guard';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
 import { CreateDateSuggestionDto } from './dto/create-date-suggestion.dto';
 import { VoteDto } from '../destination/dto/vote.dto';
+import { AuthGuard } from 'src/core/auth/auth.guard';
 
 @ApiTags('date-suggestion')
 @Controller('projects/:projectId/date-suggestions')
