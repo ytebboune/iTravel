@@ -17,7 +17,7 @@ export class UserController {
   @Get('profile')
   @ApiOperation({ summary: 'Récupérer son propre profil' })
   @ApiResponse({ status: 200, description: 'Profil utilisateur', type: GetProfileDto })
-  async getProfile(@GetUser('id') userId: string) {
+  async getProfile(@GetUser('sub') userId: string) {
     return this.userService.getProfile(userId, userId);
   }
 

@@ -5,6 +5,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import COLORS from '../../theme/colors';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 const isDesktop = width >= 1024;
@@ -43,44 +44,19 @@ function LogoTitle() {
   }
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-      <MaskedView
-        maskElement={
-          <Text
-            style={{
-              fontSize: 52,
-              fontFamily: 'MontserratAlternates-Bold',
-              color: 'black',
-              letterSpacing: 2.5,
-              textTransform: 'uppercase',
-              textAlign: 'center',
-              marginBottom: 6,
-            }}
-          >
-            iTravel
-          </Text>
-        }
+      <Text
+        style={{
+          fontSize: 52,
+          fontFamily: 'MontserratAlternates-Bold',
+          color: COLORS.primaryLight,
+          letterSpacing: 2.5,
+          textTransform: 'uppercase',
+          textAlign: 'center',
+          marginBottom: 6,
+        }}
       >
-        <LinearGradient
-          colors={[COLORS.secondary, COLORS.primary]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={{ height: 60, justifyContent: 'center' }}
-        >
-          <Text
-            style={{
-              opacity: 0,
-              fontSize: 52,
-              fontFamily: 'MontserratAlternates-Bold',
-              letterSpacing: 2.5,
-              textTransform: 'uppercase',
-              textAlign: 'center',
-              marginBottom: 6,
-            }}
-          >
-            iTravel
-          </Text>
-        </LinearGradient>
-      </MaskedView>
+        iTravel
+      </Text>
       <View style={{
         width: 14,
         height: 14,
@@ -94,8 +70,9 @@ function LogoTitle() {
 }
 
 export function AuthHeader({ subtitle, showBackButton = false }: { subtitle: string, showBackButton?: boolean }) {
+  const insets = useSafeAreaInsets();
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, Platform.OS === 'ios' && { marginTop: insets.top + 20 }]}>
       {showBackButton && (
         <TouchableOpacity 
           style={styles.backButton}
@@ -120,10 +97,11 @@ export function AuthHeader({ subtitle, showBackButton = false }: { subtitle: str
 }
 
 export function AuthDivider() {
+  const { t } = require('react-i18next');
   return (
     <View style={styles.orRow}>
       <View style={styles.orLine} />
-      <Text style={styles.orText}>OR</Text>
+      <Text style={styles.orText}>{t ? t('auth.login.or', 'OU') : 'OU'}</Text>
       <View style={styles.orLine} />
     </View>
   );

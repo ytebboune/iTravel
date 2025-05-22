@@ -18,6 +18,7 @@ const COLORS = {
   placeholder: '#A9A9A9', // Placeholder inputs
   border: 'rgba(0,0,0,0.07)', // Bordures très discrètes
   birdBrown: '#8B5C2A', // Marron doré plus clair (ailes oiseau)
+  primaryLight: '#2D9560', // Vert doux pour logo ou accents
 };
 
 export default COLORS; 

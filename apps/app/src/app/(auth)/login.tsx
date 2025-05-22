@@ -7,12 +7,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import { useState, useEffect } from 'react';
 import { AuthHeader, AuthDivider } from './_layout';
-import { getAuthBackgroundImage } from './getAuthBackgroundImage';
-import { login as loginApi } from './authService';
+import { getAuthBackgroundImage } from '../../utils/getAuthBackgroundImage';
+import { login as loginApi } from '../../services/authService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { validateEmail, validateLoginPassword } from '@/utils/validation';
 import { useTranslation } from 'react-i18next';
 import { LanguageSelector } from '@/components/LanguageSelector';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
@@ -54,44 +55,19 @@ function LogoTitle() {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
       <MaterialCommunityIcons name="airplane" size={36} color={COLORS.accent} style={{ marginRight: 8, marginTop: 2 }} />
-      <MaskedView
-        maskElement={
-          <Text
-            style={{
-              fontSize: 52,
-              fontFamily: 'MontserratAlternates-Bold',
-              color: 'black',
-              letterSpacing: 2.5,
-              textTransform: 'uppercase',
-              textAlign: 'center',
-              marginBottom: 6,
-            }}
-          >
-            iTravel
-          </Text>
-        }
+      <Text
+        style={{
+          fontSize: 52,
+          fontFamily: 'MontserratAlternates-Bold',
+          color: COLORS.primaryLight,
+          letterSpacing: 2.5,
+          textTransform: 'uppercase',
+          textAlign: 'center',
+          marginBottom: 6,
+        }}
       >
-        <LinearGradient
-          colors={[COLORS.secondary, COLORS.primary]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={{ height: 60, justifyContent: 'center' }}
-        >
-          <Text
-            style={{
-              opacity: 0,
-              fontSize: 52,
-              fontFamily: 'MontserratAlternates-Bold',
-              letterSpacing: 2.5,
-              textTransform: 'uppercase',
-              textAlign: 'center',
-              marginBottom: 6,
-            }}
-          >
-            iTravel
-          </Text>
-        </LinearGradient>
-      </MaskedView>
+        iTravel
+      </Text>
       <View style={{
         width: 14,
         height: 14,
@@ -107,6 +83,7 @@ function LogoTitle() {
 export default function LoginScreen() {
   const { t } = useTranslation();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const isLandscape = windowWidth > windowHeight;
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
@@ -135,9 +112,9 @@ export default function LoginScreen() {
     },
     header: {
       marginTop: Platform.select({
-        ios: isLandscape ? windowHeight * 0.04 : windowHeight * 0.06,
+        ios: insets.top + (isLandscape ? windowHeight * 0.04 : windowHeight * 0.12),
         android: isLandscape ? windowHeight * 0.03 : windowHeight * 0.04,
-        default: isLandscape ? windowHeight * 0.04 : windowHeight * 0.06,
+        default: isLandscape ? windowHeight * 0.04 : windowHeight * 0.12,
       }),
       marginBottom: isLandscape ? 12 : 18,
       alignItems: 'center',
@@ -412,7 +389,7 @@ export default function LoginScreen() {
                   <Text style={styles.loginButtonText}>{loading ? t('auth.login.loading') : t('auth.login.submit')}</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.forgot}>
+                <TouchableOpacity style={styles.forgot} onPress={() => router.push('/(auth)/forgot-password')}>
                   <Text style={styles.forgot}>{t('auth.login.forgotPassword')}</Text>
                 </TouchableOpacity>
 
@@ -435,11 +412,9 @@ export default function LoginScreen() {
           </KeyboardAvoidingView>
           {/* Create account link juste sous la card */}
           <View style={styles.bottomLinkWrapper}>
-            <Link href="/(auth)/register" asChild>
-              <TouchableOpacity>
-                <Text style={styles.createAccountText}>{t('auth.login.noAccount')}</Text>
-              </TouchableOpacity>
-            </Link>
+            <TouchableOpacity onPress={() => router.replace('/(auth)/register')}>
+              <Text style={styles.createAccountText}>{t('auth.login.noAccount')}</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </View>

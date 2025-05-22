@@ -9,6 +9,11 @@ export class UserService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getProfile(userId: string, targetUserId: string): Promise<GetProfileDto> {
+    // Log pour debug
+    console.log('getProfile called with:', { userId, targetUserId });
+    if (!targetUserId) {
+      throw new BadRequestException('targetUserId requis');
+    }
     const targetUser = await this.prisma.user.findUnique({
       where: { id: targetUserId },
       include: {

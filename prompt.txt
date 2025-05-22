@@ -1,0 +1,56 @@
+# Prompt front iTravel — Expo web & mobile
+
+**Important : Tout ce qui sera développé doit fonctionner à la fois sur mobile (Expo/React Native) ET sur le web (Expo Web), avec la même codebase.**
+
+
+Tu vas développer exclusivement la partie **front-end** de l’application iTravel dans le dossier `/apps/app` du monorepo.
+
+## Contexte technique et contraintes
+
+- **Backend NestJS** déjà existant (dans `/apps/backend`), exposant API REST + WebSocket
+- **Types partagés** dans `/packages/shared`
+- **Expo (React Native + Web)**
+- **UI 100% Tamagui** (le design system à utiliser pour tous composants)
+- **Charte graphique officielle** à suivre strictement (voir [GRAPHIC_GUIDELINES.md](../GRAPHIC_GUIDELINES.md) ou inclue le prompt complet dans la même fenêtre Cursor)
+- **State management avec Zustand** (stores globaux et/ou par feature)
+- **Data fetching et cache avec TanStack Query**
+- **Auth (Google, Apple, email)** via backend
+- **Structure feature-based** : chaque module métier a son dossier (auth, projets, votes, dépenses, activités, chat, notifications, galerie, etc.)
+- **Tests avec Jest/React Native Testing Library**
+- **Accessibilité, responsive, dark mode** obligatoires
+
+## Philosophie de développement
+
+- **Ne jamais toucher au backend**
+- Récupère et réutilise au maximum les types/DTO du dossier `/packages/shared`
+- Respecte la charte graphique sur tous les écrans (couleurs, typo, radius, etc.) -> elle est disponible dans GRAPHIC-GUIDELINES.md que tu devras bien analyser et suivre
+- Modularité, atomicité : chaque feature dans son dossier (`/features/feature-name`)
+- Priorise l’intégration la plus “Expo/Web” possible (évite tout ce qui est natif-only)
+- Commence par la structure de projet, le routing/navigation, puis les features dans l’ordre MVP
+- **Chaque composant Tamagui doit utiliser les tokens/variables du thème iTravel**
+
+## Premières tâches attendues
+
+1. Initialiser la structure `/apps/app` (Expo, Tamagui, Zustand, TanStack Query, navigation, tests)
+2. Créer la base du thème Tamagui (couleurs, typo, dark mode)
+3. Implémenter le flux d’authentification (Google, Apple, email) — UI et appels API
+4. Définir la navigation principale (stack/tab navigation, pages features)
+5. Mettre en place les premières features MVP (ex: création de projet, vote destination, etc.)
+6. **Arrête-toi après chaque tâche**, attend la validation avant de passer à la suivante
+
+## Coding Protocol
+
+- **N’implémente qu’une seule tâche à la fois**, stoppe-toi après chaque étape pour tests/validation
+- Code minimal, modulaire, testé, zéro hors-périmètre
+- Utilise Tamagui et les tokens du thème pour chaque composant
+- Si une action manuelle/config externe est requise, indique-le clairement
+- **Ne fais aucune modification au backend ou aux packages qui ne concernent pas le front**
+- Si besoin de mock API, crée un dossier `/mocks` dans le front
+
+---
+
+**Démarre maintenant la partie front de iTravel dans `/apps/app` en respectant scrupuleusement ces instructions.**
+
+---
+
+*(Ajoute la charte graphique complète ou un lien vers elle dans le même prompt pour maximiser la cohérence visuelle !)*

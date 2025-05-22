@@ -15,6 +15,7 @@ import {
 } from '@expo-google-fonts/poppins';
 import { Slot } from 'expo-router';
 import './global.css';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -40,5 +41,9 @@ export default function App() {
     return null;
   }
 
-  return <Slot />;
+  return (
+    <SafeAreaProvider>
+      <Slot />
+    </SafeAreaProvider>
+  );
 } 

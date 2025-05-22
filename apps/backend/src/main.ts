@@ -12,10 +12,7 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
   // Configuration CORS
-  app.enableCors({
-    origin: configService.get('FRONTEND_URL'),
-    credentials: true,
-  });
+  app.enableCors({ origin: true, credentials: true });
 
   // Middleware
   app.use(cookieParser());

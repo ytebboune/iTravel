@@ -1,4 +1,4 @@
-import { authFetch } from '../(auth)/authService';
+import { authFetch } from './authService';
 
 export async function getProfile() {
   const response = await authFetch('http://localhost:3000/users/profile');

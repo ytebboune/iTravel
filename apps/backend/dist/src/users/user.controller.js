@@ -73,7 +73,7 @@ __decorate([
     (0, common_1.Get)('profile'),
     (0, swagger_1.ApiOperation)({ summary: 'Récupérer son propre profil' }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Profil utilisateur', type: get_profile_dto_1.GetProfileDto }),
-    __param(0, (0, get_user_decorator_1.GetUser)('id')),
+    __param(0, (0, get_user_decorator_1.GetUser)('sub')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)

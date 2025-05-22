@@ -17,6 +17,10 @@ let UserService = class UserService {
         this.prisma = prisma;
     }
     async getProfile(userId, targetUserId) {
+        console.log('getProfile called with:', { userId, targetUserId });
+        if (!targetUserId) {
+            throw new common_1.BadRequestException('targetUserId requis');
+        }
         const targetUser = await this.prisma.user.findUnique({
             where: { id: targetUserId },
             include: {

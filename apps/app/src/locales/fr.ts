@@ -55,7 +55,29 @@ export default {
         confirmPasswordRequired: 'La confirmation du mot de passe est requise',
         passwordsDontMatch: 'Les mots de passe ne correspondent pas',
       }
-    }
+    },
+    forgot: {
+      title: 'Mot de passe oublié',
+      desc: 'Entrez votre adresse email pour recevoir un lien de réinitialisation.',
+      email: 'Adresse email',
+      submit: 'Envoyer',
+      loading: 'Envoi...',
+      sent: 'Si cet email existe, un lien de réinitialisation a été envoyé.',
+      error: 'Erreur lors de la demande.',
+      back: 'Retour à la connexion',
+    },
+    reset: {
+      title: 'Nouveau mot de passe',
+      desc: 'Choisissez un nouveau mot de passe.',
+      password: 'Nouveau mot de passe',
+      confirm: 'Confirmer le mot de passe',
+      submit: 'Réinitialiser',
+      loading: 'Envoi...',
+      success: 'Votre mot de passe a bien été réinitialisé.',
+      error: 'Erreur lors de la réinitialisation.',
+      errorLength: 'Le mot de passe doit faire au moins 8 caractères.',
+      errorMatch: 'Les mots de passe ne correspondent pas.',
+    },
   },
   home: {
     welcome: 'Bienvenue sur iTravel !',

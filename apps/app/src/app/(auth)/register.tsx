@@ -5,9 +5,9 @@ import { Ionicons, AntDesign } from '@expo/vector-icons';
 import { useState, useEffect } from 'react';
 import COLORS from '../../theme/colors';
 import { AuthHeader, AuthDivider } from './_layout';
-import { getAuthBackgroundImage } from './getAuthBackgroundImage';
+import { getAuthBackgroundImage } from '../../utils/getAuthBackgroundImage';
 import { useRouter } from 'expo-router';
-import { register as registerApi } from './authService';
+import { register as registerApi } from '../../services/authService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { validateEmail, validatePassword, validateConfirmPassword } from '@/utils/validation';
 import { useTranslation } from 'react-i18next';
@@ -453,11 +453,9 @@ export default function RegisterScreen() {
           </View>
           {/* Login link juste sous la card */}
           <View style={styles.bottomLinkWrapper}>
-            <Link href="/(auth)/login" asChild>
-              <TouchableOpacity>
-                <Text style={styles.createAccountText}>{t('auth.register.haveAccount')}</Text>
-              </TouchableOpacity>
-            </Link>
+            <TouchableOpacity onPress={() => router.replace('/(auth)/login')}>
+              <Text style={styles.createAccountText}>{t('auth.register.haveAccount')}</Text>
+            </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
       </View>

@@ -14,10 +14,7 @@ async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     const configService = app.get(config_1.ConfigService);
     const logger = new common_2.Logger('Bootstrap');
-    app.enableCors({
-        origin: configService.get('FRONTEND_URL'),
-        credentials: true,
-    });
+    app.enableCors({ origin: true, credentials: true });
     app.use((0, cookie_parser_1.default)());
     app.useGlobalPipes(new common_1.ValidationPipe({
         whitelist: true,

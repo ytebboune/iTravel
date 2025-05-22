@@ -91,4 +91,20 @@ export async function authFetch(input: RequestInfo, init: RequestInit = {}) {
     }
   }
   return response;
+}
+
+export async function forgotPassword(email: string) {
+  return fetch(`${API_URL}/auth/forgot-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function resetPassword(token: string, newPassword: string) {
+  return fetch(`${API_URL}/auth/reset-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, newPassword }),
+  });
 } 

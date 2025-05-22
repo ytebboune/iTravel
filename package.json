@@ -16,5 +16,11 @@
     "url": "https://github.com/ytebboune/iTravel/issues"
   },
   "homepage": "https://github.com/ytebboune/iTravel#readme",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "@expo-google-fonts/montserrat-alternates": "^0.3.0",
+    "i18next": "^25.2.0",
+    "react-i18next": "^15.5.1",
+    "react-native-safe-area-context": "^5.4.1"
+  }
 }
