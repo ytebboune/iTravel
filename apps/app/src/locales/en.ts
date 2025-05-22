@@ -1,0 +1,65 @@
+export default {
+  common: {
+    loading: 'Loading...',
+    error: 'An error occurred',
+    languageSelector: 'Switch to {{language}}',
+  },
+  auth: {
+    login: {
+      title: 'Let\'s Fly',
+      email: 'Email address',
+      password: 'Password',
+      submit: 'Login',
+      loading: 'Logging in...',
+      forgotPassword: 'Forgot password?',
+      or: 'OR',
+      continueWithGoogle: 'Continue with Google',
+      continueWithApple: 'Continue with Apple',
+      noAccount: 'Don\'t have an account?',
+      errors: {
+        emailRequired: 'Email is required',
+        emailInvalid: 'Please enter a valid email address (example@domain.com)',
+        emailTooLong: 'Email must not exceed 254 characters',
+        emailLocalTooLong: 'Part before @ must not exceed 64 characters',
+        emailConsecutiveDots: 'Email must not contain consecutive dots',
+        emailStartsWithDot: 'Email must not start or end with a dot',
+        passwordRequired: 'Password is required',
+      }
+    },
+    register: {
+      title: 'Create your account',
+      username: 'Username',
+      email: 'Email address',
+      password: 'Password',
+      confirmPassword: 'Confirm password',
+      submit: 'Create account',
+      loading: 'Creating...',
+      or: 'OR',
+      continueWithGoogle: 'Continue with Google',
+      continueWithApple: 'Continue with Apple',
+      haveAccount: 'Already have an account?',
+      errors: {
+        usernameRequired: 'Username is required',
+        emailRequired: 'Email is required',
+        emailInvalid: 'Please enter a valid email address (example@domain.com)',
+        emailTooLong: 'Email must not exceed 254 characters',
+        emailLocalTooLong: 'Part before @ must not exceed 64 characters',
+        emailConsecutiveDots: 'Email must not contain consecutive dots',
+        emailStartsWithDot: 'Email must not start or end with a dot',
+        passwordRequired: 'Password is required',
+        passwordTooShort: 'Password must contain at least 8 characters',
+        passwordNoUppercase: 'Password must contain at least one uppercase letter',
+        passwordNoLowercase: 'Password must contain at least one lowercase letter',
+        passwordNoNumber: 'Password must contain at least one number',
+        passwordNoSpecial: 'Password must contain at least one special character',
+        confirmPasswordRequired: 'Password confirmation is required',
+        passwordsDontMatch: 'Passwords do not match',
+      }
+    }
+  },
+  home: {
+    welcome: 'Welcome to iTravel!',
+    subtitle: 'Your social travel network feed will appear here soon.',
+    logout: 'Logout'
+  }
+}; 

@@ -1,0 +1,65 @@
+export default {
+  common: {
+    loading: 'Chargement...',
+    error: 'Une erreur est survenue',
+    languageSelector: 'Changer la langue en {{language}}',
+  },
+  auth: {
+    login: {
+      title: 'Envolons nous',
+      email: 'Adresse email',
+      password: 'Mot de passe',
+      submit: 'Connexion',
+      loading: 'Connexion...',
+      forgotPassword: 'Mot de passe oublié ?',
+      or: 'OU',
+      continueWithGoogle: 'Continuer avec Google',
+      continueWithApple: 'Continuer avec Apple',
+      noAccount: 'Pas encore de compte ?',
+      errors: {
+        emailRequired: 'L\'email est requis',
+        emailInvalid: 'Veuillez saisir une adresse email valide (exemple@domaine.com)',
+        emailTooLong: 'L\'email ne doit pas dépasser 254 caractères',
+        emailLocalTooLong: 'La partie avant @ ne doit pas dépasser 64 caractères',
+        emailConsecutiveDots: 'L\'email ne doit pas contenir de points consécutifs',
+        emailStartsWithDot: 'L\'email ne doit pas commencer ou finir par un point',
+        passwordRequired: 'Le mot de passe est requis',
+      }
+    },
+    register: {
+      title: 'Créez votre compte',
+      username: 'Nom d\'utilisateur',
+      email: 'Adresse email',
+      password: 'Mot de passe',
+      confirmPassword: 'Confirmer le mot de passe',
+      submit: 'Créer un compte',
+      loading: 'Création...',
+      or: 'OU',
+      continueWithGoogle: 'Continuer avec Google',
+      continueWithApple: 'Continuer avec Apple',
+      haveAccount: 'Déjà un compte ?',
+      errors: {
+        usernameRequired: 'Le nom d\'utilisateur est requis',
+        emailRequired: 'L\'email est requis',
+        emailInvalid: 'Veuillez saisir une adresse email valide (exemple@domaine.com)',
+        emailTooLong: 'L\'email ne doit pas dépasser 254 caractères',
+        emailLocalTooLong: 'La partie avant @ ne doit pas dépasser 64 caractères',
+        emailConsecutiveDots: 'L\'email ne doit pas contenir de points consécutifs',
+        emailStartsWithDot: 'L\'email ne doit pas commencer ou finir par un point',
+        passwordRequired: 'Le mot de passe est requis',
+        passwordTooShort: 'Le mot de passe doit contenir au moins 8 caractères',
+        passwordNoUppercase: 'Le mot de passe doit contenir au moins une majuscule',
+        passwordNoLowercase: 'Le mot de passe doit contenir au moins une minuscule',
+        passwordNoNumber: 'Le mot de passe doit contenir au moins un chiffre',
+        passwordNoSpecial: 'Le mot de passe doit contenir au moins un caractère spécial',
+        confirmPasswordRequired: 'La confirmation du mot de passe est requise',
+        passwordsDontMatch: 'Les mots de passe ne correspondent pas',
+      }
+    }
+  },
+  home: {
+    welcome: 'Bienvenue sur iTravel !',
+    subtitle: 'Ici s\'affichera bientôt le fil d\'actualité de votre réseau social de voyage.',
+    logout: 'Déconnexion'
+  }
+}; 

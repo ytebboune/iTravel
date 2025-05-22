@@ -1,12 +1,18 @@
 import { View, Text, Image, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, StyleSheet, Dimensions, useWindowDimensions } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { Ionicons, AntDesign, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import COLORS from '../../theme/colors';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AuthHeader, AuthDivider } from './_layout';
+import { getAuthBackgroundImage } from './getAuthBackgroundImage';
+import { login as loginApi } from './authService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { validateEmail, validateLoginPassword } from '@/utils/validation';
+import { useTranslation } from 'react-i18next';
+import { LanguageSelector } from '@/components/LanguageSelector';
 
 const { width, height } = Dimensions.get('window');
 
@@ -99,36 +105,15 @@ function LogoTitle() {
 }
 
 export default function LoginScreen() {
+  const { t } = useTranslation();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const isLandscape = windowWidth > windowHeight;
   const [showPassword, setShowPassword] = useState(false);
-
-  // Fonction pour obtenir l'image de fond en fonction des dimensions actuelles
-  const getBackgroundImage = () => {
-    let imageSource;
-    
-    // Desktop
-    if (windowWidth >= 1024) {
-      imageSource = require('../../assets/images/background-login/desktop_large.png');
-      console.log('Using desktop_large.png - Width:', windowWidth, 'Height:', windowHeight);
-    }
-    // Tablet
-    else if (windowWidth >= 768) {
-      imageSource = isLandscape 
-        ? require('../../assets/images/background-login/tablette_paysage.png')
-        : require('../../assets/images/background-login/tablette_portrait.png');
-      console.log('Using tablette_' + (isLandscape ? 'paysage' : 'portrait') + '.png - Width:', windowWidth, 'Height:', windowHeight);
-    }
-    // Mobile
-    else {
-      imageSource = isLandscape
-        ? require('../../assets/images/background-login/mobile_paysage.png')
-        : require('../../assets/images/background-login/test_mobile_portrait.png');
-      console.log('Using mobile_' + (isLandscape ? 'paysage' : 'test_portrait') + '.png - Width:', windowWidth, 'Height:', windowHeight);
-    }
-
-    return imageSource;
-  };
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   // Calculer CARD_WIDTH avant de l'utiliser dans les styles
   const CARD_WIDTH = isLandscape 
@@ -325,87 +310,137 @@ export default function LoginScreen() {
     },
   });
 
+  const handleLogin = async () => {
+    setError('');
+    
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.isValid) {
+      setError(emailValidation.message);
+      return;
+    }
+
+    const passwordValidation = validateLoginPassword(password);
+    if (!passwordValidation.isValid) {
+      setError(passwordValidation.message);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await loginApi(email, password);
+      await AsyncStorage.setItem('accessToken', res.access_token);
+      router.replace('/(main)/home');
+    } catch (e: any) {
+      setError(e.message || 'Erreur lors de la connexion');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = await AsyncStorage.getItem('accessToken');
+      if (token) {
+        router.replace('/(main)/home');
+      }
+    };
+    checkAuth();
+  }, []);
+
   return (
-    <View style={styles.container}>
-      {/* Background image */}
-      <View style={StyleSheet.absoluteFill} pointerEvents="none">
-        <Image
-          source={getBackgroundImage()}
-          style={styles.background}
+    <View style={{ flex: 1 }}>
+      <LanguageSelector />
+      <View style={styles.container}>
+        {/* Background image */}
+        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+          <Image
+            source={getAuthBackgroundImage(windowWidth, windowHeight)}
+            style={styles.background}
+          />
+        </View>
+        {/* Header */}
+        <AuthHeader 
+          subtitle={t('auth.login.title')} 
+          showBackButton={false}
         />
-      </View>
-
-      {/* Header */}
-      <AuthHeader 
-        subtitle="Envolons nous" 
-        showBackButton={false}
-      />
-
-      {/* Card centering wrapper */}
-      <View style={styles.centerWrapper}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.cardWrapper}
-        >
-          <View style={styles.cardOuter}>
-            <BlurView intensity={80} tint="light" style={StyleSheet.absoluteFill} />
-            <View style={styles.cardContent}>
-              <TextInput
-                style={styles.input}
-                placeholder="Email address"
-                placeholderTextColor={COLORS.placeholder}
-              />
-              <View style={styles.passwordRow}>
+        {/* Card centering wrapper */}
+        <View style={styles.centerWrapper}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.cardWrapper}
+          >
+            <View style={styles.cardOuter}>
+              <BlurView intensity={80} tint="light" style={StyleSheet.absoluteFill} />
+              <View style={styles.cardContent}>
                 <TextInput
-                  style={styles.inputPassword}
-                  placeholder="Password"
+                  style={styles.input}
+                  placeholder={t('auth.login.email')}
                   placeholderTextColor={COLORS.placeholder}
-                  secureTextEntry={!showPassword}
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
                 />
-                <TouchableOpacity 
-                  style={styles.eyeButton}
-                  onPress={() => setShowPassword(!showPassword)}
-                >
-                  <Ionicons 
-                    name={showPassword ? "eye-off-outline" : "eye-outline"} 
-                    size={24} 
-                    color={COLORS.placeholder} 
+                <View style={styles.passwordRow}>
+                  <TextInput
+                    style={styles.inputPassword}
+                    placeholder={t('auth.login.password')}
+                    placeholderTextColor={COLORS.placeholder}
+                    secureTextEntry={!showPassword}
+                    value={password}
+                    onChangeText={setPassword}
+                    autoComplete="off"
+                    autoCorrect={false}
+                    returnKeyType="done"
+                    onSubmitEditing={handleLogin}
                   />
+                  <TouchableOpacity 
+                    style={styles.eyeButton}
+                    onPress={() => setShowPassword(!showPassword)}
+                  >
+                    <Ionicons 
+                      name={showPassword ? "eye-off-outline" : "eye-outline"} 
+                      size={24} 
+                      color={COLORS.placeholder} 
+                    />
+                  </TouchableOpacity>
+                </View>
+                {error ? (
+                  <Text style={{ color: 'red', marginBottom: 8, textAlign: 'center' }}>{error}</Text>
+                ) : null}
+                <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={loading}>
+                  <Text style={styles.loginButtonText}>{loading ? t('auth.login.loading') : t('auth.login.submit')}</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.forgot}>
+                  <Text style={styles.forgot}>{t('auth.login.forgotPassword')}</Text>
+                </TouchableOpacity>
+
+                <View style={styles.orRow}>
+                  <View style={styles.orLine} />
+                  <Text style={styles.orText}>{t('auth.login.or')}</Text>
+                  <View style={styles.orLine} />
+                </View>
+
+                <TouchableOpacity style={styles.socialButton}>
+                  <AntDesign name="google" size={20} color="#4285F4" />
+                  <Text style={styles.socialText}>{t('auth.login.continueWithGoogle')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.socialButton}>
+                  <AntDesign name="apple1" size={20} color={COLORS.text} />
+                  <Text style={styles.socialText}>{t('auth.login.continueWithApple')}</Text>
                 </TouchableOpacity>
               </View>
-
-              <TouchableOpacity style={styles.loginButton}>
-                <Text style={styles.loginButtonText}>Login</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.forgot}>
-                <Text style={styles.forgot}>Forgot password?</Text>
-              </TouchableOpacity>
-
-              <View style={styles.orRow}>
-                <View style={styles.orLine} />
-                <Text style={styles.orText}>OR</Text>
-                <View style={styles.orLine} />
-              </View>
-
-              <TouchableOpacity style={styles.socialButton}>
-                <AntDesign name="google" size={20} color="#4285F4" />
-                <Text style={styles.socialText}>Continue with Google</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.socialButton}>
-                <AntDesign name="apple1" size={20} color={COLORS.text} />
-                <Text style={styles.socialText}>Continue with Apple</Text>
-              </TouchableOpacity>
             </View>
+          </KeyboardAvoidingView>
+          {/* Create account link juste sous la card */}
+          <View style={styles.bottomLinkWrapper}>
+            <Link href="/(auth)/register" asChild>
+              <TouchableOpacity>
+                <Text style={styles.createAccountText}>{t('auth.login.noAccount')}</Text>
+              </TouchableOpacity>
+            </Link>
           </View>
-        </KeyboardAvoidingView>
-        {/* Create account link juste sous la card */}
-        <View style={styles.bottomLinkWrapper}>
-          <Link href="/(auth)/register" asChild>
-            <TouchableOpacity>
-              <Text style={styles.createAccountText}>Don't have an account?</Text>
-            </TouchableOpacity>
-          </Link>
         </View>
       </View>
     </View>

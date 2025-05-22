@@ -6,6 +6,7 @@ import { Manrope_700Bold, Manrope_800ExtraBold } from '@expo-google-fonts/manrop
 import { SplashScreen } from 'expo-router'
 import { MontserratAlternates_700Bold } from '@expo-google-fonts/montserrat-alternates'
 import * as ScreenOrientation from 'expo-screen-orientation'
+import { LanguageProvider } from '../providers/LanguageProvider'
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -33,8 +34,13 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider>
-      <Stack screenOptions={{ headerShown: false }} />
-    </ThemeProvider>
+    <LanguageProvider>
+      <ThemeProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+          <Stack.Screen name="(main)" options={{ headerShown: false }} />
+        </Stack>
+      </ThemeProvider>
+    </LanguageProvider>
   );
 } 
