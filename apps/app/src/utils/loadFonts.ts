@@ -11,6 +11,13 @@ import {
   Poppins_600SemiBold,
   Poppins_700Bold,
 } from '@expo-google-fonts/poppins';
+import {
+  Manrope_700Bold,
+  Manrope_800ExtraBold,
+} from '@expo-google-fonts/manrope';
+import {
+  MontserratAlternates_700Bold,
+} from '@expo-google-fonts/montserrat-alternates';
 
 export async function loadFonts() {
   const [fontsLoaded] = useFonts({
@@ -22,6 +29,8 @@ export async function loadFonts() {
     'Poppins-Medium': Poppins_500Medium,
     'Poppins-SemiBold': Poppins_600SemiBold,
     'Poppins-Bold': Poppins_700Bold,
+    'Manrope-Bold': Manrope_700Bold,
+    'Manrope-ExtraBold': Manrope_800ExtraBold,
   });
 
   return fontsLoaded;

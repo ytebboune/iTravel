@@ -1,22 +1,15 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: ["./App.{js,jsx,ts,tsx}", "./src/**/*.{js,jsx,ts,tsx}"],
+  content: ["./src/**/*.{js,jsx,ts,tsx}"],
   presets: [require("nativewind/preset")],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        primary: '#33B9CB',
-        secondary: '#FF6B6B',
-        accent: '#4ECDC4',
+        primary: '#007AFF',
+        secondary: '#5856D6',
         background: '#FFFFFF',
-        surface: '#F8F9FA',
-        'text-primary': '#1A1A1A',
-        'text-secondary': '#666666',
-        'text-light': '#999999',
-        success: '#4CAF50',
-        warning: '#FFC107',
-        error: '#F44336',
-        info: '#2196F3',
+        text: '#000000',
       },
       fontFamily: {
         sans: ['Inter'],
