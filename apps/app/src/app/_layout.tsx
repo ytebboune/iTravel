@@ -1,9 +1,11 @@
+import React, { useEffect } from 'react';
 import { Stack } from 'expo-router'
 import { ThemeProvider } from '../providers/theme-provider'
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter'
 import { Manrope_700Bold, Manrope_800ExtraBold } from '@expo-google-fonts/manrope'
 import { SplashScreen } from 'expo-router'
 import { MontserratAlternates_700Bold } from '@expo-google-fonts/montserrat-alternates'
+import * as ScreenOrientation from 'expo-screen-orientation'
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -15,12 +17,21 @@ export default function RootLayout() {
     'Manrope-ExtraBold': Manrope_800ExtraBold,
     'MontserratAlternates-Bold': MontserratAlternates_700Bold,
   })
+
+  useEffect(() => {
+    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT);
+    return () => {
+      ScreenOrientation.unlockAsync();
+    };
+  }, []);
+
   if (!fontsLoaded) {
     SplashScreen.preventAutoHideAsync()
     return null
   } else {
     SplashScreen.hideAsync()
   }
+
   return (
     <ThemeProvider>
       <Stack screenOptions={{ headerShown: false }} />

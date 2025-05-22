@@ -1,10 +1,12 @@
-import { View, Text, Image, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, Image, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, StyleSheet, Dimensions, useWindowDimensions } from 'react-native';
 import { Link } from 'expo-router';
 import { Ionicons, AntDesign, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import COLORS from '../../theme/colors';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
+import { useState } from 'react';
+import { AuthHeader, AuthDivider } from './_layout';
 
 const { width, height } = Dimensions.get('window');
 
@@ -97,21 +99,247 @@ function LogoTitle() {
 }
 
 export default function LoginScreen() {
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const isLandscape = windowWidth > windowHeight;
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Fonction pour obtenir l'image de fond en fonction des dimensions actuelles
+  const getBackgroundImage = () => {
+    let imageSource;
+    
+    // Desktop
+    if (windowWidth >= 1024) {
+      imageSource = require('../../assets/images/background-login/desktop_large.png');
+      console.log('Using desktop_large.png - Width:', windowWidth, 'Height:', windowHeight);
+    }
+    // Tablet
+    else if (windowWidth >= 768) {
+      imageSource = isLandscape 
+        ? require('../../assets/images/background-login/tablette_paysage.png')
+        : require('../../assets/images/background-login/tablette_portrait.png');
+      console.log('Using tablette_' + (isLandscape ? 'paysage' : 'portrait') + '.png - Width:', windowWidth, 'Height:', windowHeight);
+    }
+    // Mobile
+    else {
+      imageSource = isLandscape
+        ? require('../../assets/images/background-login/mobile_paysage.png')
+        : require('../../assets/images/background-login/test_mobile_portrait.png');
+      console.log('Using mobile_' + (isLandscape ? 'paysage' : 'test_portrait') + '.png - Width:', windowWidth, 'Height:', windowHeight);
+    }
+
+    return imageSource;
+  };
+
+  // Calculer CARD_WIDTH avant de l'utiliser dans les styles
+  const CARD_WIDTH = isLandscape 
+    ? Math.min(windowWidth * 0.4, 380) // En paysage, on prend 40% de la largeur max 380px
+    : Math.min(windowWidth * 0.92, 380); // En portrait, on prend 92% de la largeur max 380px
+
+  // Mettre à jour les dimensions pour les styles
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: 'transparent',
+      overflow: 'hidden',
+    },
+    background: {
+      width: '100%',
+      height: '100%',
+      resizeMode: 'cover',
+      position: 'absolute',
+    },
+    header: {
+      marginTop: Platform.select({
+        ios: isLandscape ? windowHeight * 0.04 : windowHeight * 0.06,
+        android: isLandscape ? windowHeight * 0.03 : windowHeight * 0.04,
+        default: isLandscape ? windowHeight * 0.04 : windowHeight * 0.06,
+      }),
+      marginBottom: isLandscape ? 12 : 18,
+      alignItems: 'center',
+      paddingHorizontal: 16,
+    },
+    title: {
+      fontSize: 52,
+      fontWeight: 'bold',
+      color: COLORS.textLight,
+      textAlign: 'center',
+      letterSpacing: 2.5,
+      marginBottom: 6,
+      fontFamily: 'Manrope-ExtraBold',
+      textShadowColor: 'rgba(0,0,0,0.22)',
+      textShadowOffset: { width: 0, height: 4 },
+      textShadowRadius: 12,
+      textTransform: 'uppercase',
+    },
+    subtitle: {
+      fontSize: 32,
+      color: COLORS.accent,
+      textAlign: 'center',
+      fontFamily: 'Manrope-Bold',
+      fontWeight: '700',
+      letterSpacing: 1.2,
+      textShadowColor: 'rgba(0,0,0,0.10)',
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 4,
+      marginBottom: 8,
+    },
+    centerWrapper: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      width: '100%',
+      paddingHorizontal: 16,
+      paddingBottom: Platform.select({
+        ios: isLandscape ? 16 : 20,
+        android: isLandscape ? 12 : 16,
+        default: isLandscape ? 16 : 20,
+      }),
+    },
+    cardWrapper: {
+      width: '100%',
+      alignItems: 'center',
+      maxWidth: 440,
+    },
+    cardOuter: {
+      width: CARD_WIDTH,
+      borderRadius: 24,
+      overflow: 'hidden',
+      backgroundColor: 'rgba(255,255,255,0.35)',
+      position: 'relative',
+      maxWidth: '100%',
+    },
+    cardContent: {
+      paddingVertical: Math.min(24, windowHeight * 0.03),
+      paddingHorizontal: Math.min(18, windowWidth * 0.04),
+      alignItems: 'center',
+    },
+    input: {
+      width: '100%',
+      backgroundColor: COLORS.background,
+      borderRadius: 18,
+      padding: Math.min(16, windowHeight * 0.02),
+      fontSize: Math.min(16, windowWidth * 0.04),
+      marginBottom: Math.min(14, windowHeight * 0.02),
+      borderWidth: 0,
+      color: COLORS.text,
+      fontFamily: 'Inter',
+    },
+    passwordRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      width: '100%',
+      marginBottom: Math.min(14, windowHeight * 0.02),
+    },
+    inputPassword: {
+      flex: 1,
+      backgroundColor: COLORS.background,
+      borderRadius: 18,
+      padding: Math.min(16, windowHeight * 0.02),
+      fontSize: Math.min(16, windowWidth * 0.04),
+      borderWidth: 0,
+      color: COLORS.text,
+      fontFamily: 'Inter',
+    },
+    eyeButton: {
+      height: Math.min(48, windowHeight * 0.06),
+      width: Math.min(40, windowWidth * 0.1),
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginLeft: -Math.min(40, windowWidth * 0.1),
+    },
+    loginButton: {
+      width: '100%',
+      backgroundColor: COLORS.primary,
+      borderRadius: 32,
+      padding: Math.min(16, windowHeight * 0.02),
+      alignItems: 'center',
+      marginBottom: Math.min(12, windowHeight * 0.015),
+    },
+    loginButtonText: {
+      color: '#fff',
+      fontWeight: '600',
+      fontSize: Math.min(18, windowWidth * 0.045),
+      fontFamily: 'Inter-Medium',
+    },
+    forgot: {
+      color: 'rgba(34,46,58,0.7)',
+      marginBottom: Math.min(16, windowHeight * 0.02),
+      textAlign: 'center',
+      fontWeight: '600',
+      fontSize: Math.min(15, windowWidth * 0.038),
+      fontFamily: 'Inter-Medium',
+    },
+    orRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginVertical: Math.min(12, windowHeight * 0.015),
+      width: '100%',
+    },
+    orLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: COLORS.or,
+    },
+    orText: {
+      marginHorizontal: Math.min(8, windowWidth * 0.02),
+      color: COLORS.orText,
+      fontWeight: 'bold',
+      fontSize: Math.min(15, windowWidth * 0.038),
+      fontFamily: 'Inter-Medium',
+    },
+    socialButton: {
+      width: '100%',
+      backgroundColor: COLORS.surface,
+      borderRadius: 14,
+      padding: Math.min(16, windowHeight * 0.02),
+      alignItems: 'center',
+      marginBottom: Math.min(12, windowHeight * 0.015),
+      borderWidth: 1,
+      borderColor: '#eee',
+      flexDirection: 'row',
+      justifyContent: 'center',
+    },
+    socialText: {
+      color: COLORS.text,
+      fontWeight: 'bold',
+      fontSize: Math.min(16, windowWidth * 0.04),
+      marginLeft: Math.min(8, windowWidth * 0.02),
+      fontFamily: 'Inter',
+    },
+    bottomLinkWrapper: {
+      width: '100%',
+      alignItems: 'center',
+      marginTop: Math.min(18, windowHeight * 0.025),
+      paddingBottom: Platform.select({
+        ios: 20,
+        android: 16,
+        default: 20,
+      }),
+    },
+    createAccountText: {
+      color: COLORS.createAccount,
+      fontSize: Math.min(18, windowWidth * 0.045),
+      textDecorationLine: 'underline',
+      fontWeight: 'bold',
+      fontFamily: 'Inter-Bold',
+    },
+  });
+
   return (
     <View style={styles.container}>
       {/* Background image */}
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
         <Image
-          source={require('../../assets/images/background_2.png')}
+          source={getBackgroundImage()}
           style={styles.background}
         />
       </View>
 
       {/* Header */}
-      <View style={styles.header}>
-        <LogoTitle />
-        <Text style={styles.subtitle}>Envolons nous</Text>
-      </View>
+      <AuthHeader 
+        subtitle="Envolons nous" 
+        showBackButton={false}
+      />
 
       {/* Card centering wrapper */}
       <View style={styles.centerWrapper}>
@@ -132,18 +360,25 @@ export default function LoginScreen() {
                   style={styles.inputPassword}
                   placeholder="Password"
                   placeholderTextColor={COLORS.placeholder}
-                  secureTextEntry
+                  secureTextEntry={!showPassword}
                 />
-                <TouchableOpacity style={styles.eyeButton}>
-                  <Ionicons name="eye-outline" size={22} color={COLORS.placeholder} />
+                <TouchableOpacity 
+                  style={styles.eyeButton}
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  <Ionicons 
+                    name={showPassword ? "eye-off-outline" : "eye-outline"} 
+                    size={24} 
+                    color={COLORS.placeholder} 
+                  />
                 </TouchableOpacity>
               </View>
 
               <TouchableOpacity style={styles.loginButton}>
-                <Text style={styles.loginButtonText}>Log in</Text>
+                <Text style={styles.loginButtonText}>Login</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity>
+              <TouchableOpacity style={styles.forgot}>
                 <Text style={styles.forgot}>Forgot password?</Text>
               </TouchableOpacity>
 
@@ -168,182 +403,11 @@ export default function LoginScreen() {
         <View style={styles.bottomLinkWrapper}>
           <Link href="/(auth)/register" asChild>
             <TouchableOpacity>
-              <Text style={styles.createAccountText}>Create an account</Text>
+              <Text style={styles.createAccountText}>Don't have an account?</Text>
             </TouchableOpacity>
           </Link>
         </View>
       </View>
     </View>
   );
-}
-
-const CARD_WIDTH = width > 440 ? 380 : width * 0.92;
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
-  background: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  header: {
-    marginTop: height * 0.06,
-    marginBottom: 18,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 52,
-    fontWeight: 'bold',
-    color: COLORS.textLight,
-    textAlign: 'center',
-    letterSpacing: 2.5,
-    marginBottom: 6,
-    fontFamily: 'Manrope-ExtraBold',
-    textShadowColor: 'rgba(0,0,0,0.22)',
-    textShadowOffset: { width: 0, height: 4 },
-    textShadowRadius: 12,
-    textTransform: 'uppercase',
-  },
-  subtitle: {
-    fontSize: 32,
-    color: COLORS.accent,
-    textAlign: 'center',
-    fontFamily: 'Manrope-Bold',
-    fontWeight: '700',
-    letterSpacing: 1.2,
-    textShadowColor: 'rgba(0,0,0,0.10)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-    marginBottom: 8,
-  },
-  centerWrapper: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '100%',
-  },
-  cardWrapper: {
-    width: '100%',
-    alignItems: 'center',
-  },
-  cardOuter: {
-    width: CARD_WIDTH,
-    borderRadius: 24,
-    overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.35)',
-    position: 'relative',
-  },
-  cardContent: {
-    paddingVertical: 24,
-    paddingHorizontal: 18,
-    alignItems: 'center',
-  },
-  input: {
-    width: '100%',
-    backgroundColor: COLORS.background,
-    borderRadius: 18,
-    padding: 16,
-    fontSize: 16,
-    marginBottom: 14,
-    borderWidth: 0,
-    color: COLORS.text,
-    fontFamily: 'Inter',
-  },
-  passwordRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-    marginBottom: 14,
-  },
-  inputPassword: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-    borderRadius: 18,
-    padding: 16,
-    fontSize: 16,
-    borderWidth: 0,
-    color: COLORS.text,
-    fontFamily: 'Inter',
-  },
-  eyeButton: {
-    height: 48,
-    width: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: -40,
-  },
-  loginButton: {
-    width: '100%',
-    backgroundColor: COLORS.primary,
-    borderRadius: 32,
-    padding: 16,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  loginButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 18,
-    fontFamily: 'Inter-Medium',
-  },
-  forgot: {
-    color: 'rgba(34,46,58,0.7)',
-    marginBottom: 16,
-    textAlign: 'center',
-    fontWeight: '600',
-    fontSize: 15,
-    fontFamily: 'Inter-Medium',
-  },
-  orRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 12,
-    width: '100%',
-  },
-  orLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: COLORS.or,
-  },
-  orText: {
-    marginHorizontal: 8,
-    color: COLORS.orText,
-    fontWeight: 'bold',
-    fontSize: 15,
-    fontFamily: 'Inter-Medium',
-  },
-  socialButton: {
-    width: '100%',
-    backgroundColor: COLORS.surface,
-    borderRadius: 14,
-    padding: 16,
-    alignItems: 'center',
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#eee',
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  socialText: {
-    color: COLORS.text,
-    fontWeight: 'bold',
-    fontSize: 16,
-    marginLeft: 8,
-    fontFamily: 'Inter',
-  },
-  bottomLinkWrapper: {
-    width: '100%',
-    alignItems: 'center',
-    marginTop: 18,
-  },
-  createAccountText: {
-    color: COLORS.createAccount,
-    fontSize: 18,
-    textDecorationLine: 'none',
-    fontWeight: 'bold',
-    fontFamily: 'Inter-Bold',
-  },
-}); 
+} 
