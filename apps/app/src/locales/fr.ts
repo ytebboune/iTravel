@@ -2,15 +2,15 @@ export default {
   common: {
     loading: 'Chargement...',
     error: 'Une erreur est survenue',
-    languageSelector: 'Changer la langue en {{language}}',
+    languageSelector: 'Passer en {{language}}',
   },
   auth: {
     login: {
-      title: 'Envolons nous',
+      title: 'Envolons-nous',
       email: 'Adresse email',
       password: 'Mot de passe',
       submit: 'Connexion',
-      loading: 'Connexion...',
+      loading: 'Connexion en cours...',
       forgotPassword: 'Mot de passe oublié ?',
       or: 'OU',
       continueWithGoogle: 'Continuer avec Google',
@@ -18,7 +18,7 @@ export default {
       noAccount: 'Pas encore de compte ?',
       errors: {
         emailRequired: 'L\'email est requis',
-        emailInvalid: 'Veuillez saisir une adresse email valide (exemple@domaine.com)',
+        emailInvalid: 'Veuillez entrer une adresse email valide (exemple@domaine.com)',
         emailTooLong: 'L\'email ne doit pas dépasser 254 caractères',
         emailLocalTooLong: 'La partie avant @ ne doit pas dépasser 64 caractères',
         emailConsecutiveDots: 'L\'email ne doit pas contenir de points consécutifs',
@@ -56,15 +56,18 @@ export default {
         passwordsDontMatch: 'Les mots de passe ne correspondent pas',
       }
     },
-    forgot: {
+    forgotPassword: {
       title: 'Mot de passe oublié',
       desc: 'Entrez votre adresse email pour recevoir un lien de réinitialisation.',
       email: 'Adresse email',
-      submit: 'Envoyer',
-      loading: 'Envoi...',
-      sent: 'Si cet email existe, un lien de réinitialisation a été envoyé.',
-      error: 'Erreur lors de la demande.',
-      back: 'Retour à la connexion',
+      submit: 'Envoyer le lien',
+      loading: 'Envoi en cours...',
+      success: 'Si un compte existe avec cet email, vous recevrez un lien de réinitialisation.',
+      backToLogin: 'Retour à la connexion',
+      errors: {
+        emailRequired: 'L\'email est requis',
+        emailInvalid: 'Veuillez entrer une adresse email valide',
+      }
     },
     reset: {
       title: 'Nouveau mot de passe',
@@ -77,6 +80,7 @@ export default {
       error: 'Erreur lors de la réinitialisation.',
       errorLength: 'Le mot de passe doit faire au moins 8 caractères.',
       errorMatch: 'Les mots de passe ne correspondent pas.',
+      backToLogin: 'Retour à la connexion',
     },
   },
   home: {

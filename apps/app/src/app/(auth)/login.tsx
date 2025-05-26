@@ -1,19 +1,20 @@
-import { View, Text, Image, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, StyleSheet, Dimensions, useWindowDimensions } from 'react-native';
+import { View, Text, Image, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, StyleSheet, Dimensions, useWindowDimensions, ActivityIndicator } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { Ionicons, AntDesign, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import COLORS from '../../theme/colors';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { AuthHeader, AuthDivider } from './_layout';
 import { getAuthBackgroundImage } from '../../utils/getAuthBackgroundImage';
 import { login as loginApi } from '../../services/authService';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { validateEmail, validateLoginPassword } from '@/utils/validation';
 import { useTranslation } from 'react-i18next';
 import { LanguageSelector } from '@/components/LanguageSelector';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { setCredentials, setLoading, setError } from '@/store/authSlice';
 
 const { width, height } = Dimensions.get('window');
 
@@ -82,15 +83,23 @@ function LogoTitle() {
 
 export default function LoginScreen() {
   const { t } = useTranslation();
+  const dispatch = useAppDispatch();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const isLandscape = windowWidth > windowHeight;
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [error, setErrorState] = useState<string | null>(null);
+  const loading = useAppSelector(state => state.auth.loading);
   const router = useRouter();
+
+  // Validation des champs
+  const isFormValid = 
+    email.trim().length > 0 && 
+    password.trim().length > 0 && 
+    validateEmail(email).isValid && 
+    validateLoginPassword(password).isValid;
 
   // Calculer CARD_WIDTH avant de l'utiliser dans les styles
   const CARD_WIDTH = isLandscape 
@@ -216,6 +225,7 @@ export default function LoginScreen() {
       padding: Math.min(16, windowHeight * 0.02),
       alignItems: 'center',
       marginBottom: Math.min(12, windowHeight * 0.015),
+      opacity: isFormValid ? 1 : 0.5,
     },
     loginButtonText: {
       color: '#fff',
@@ -288,41 +298,33 @@ export default function LoginScreen() {
   });
 
   const handleLogin = async () => {
-    setError('');
-    
-    const emailValidation = validateEmail(email);
-    if (!emailValidation.isValid) {
-      setError(emailValidation.message);
+    if (!validateEmail(email).isValid) {
+      setErrorState(t('auth.login.errors.emailInvalid'));
       return;
     }
 
-    const passwordValidation = validateLoginPassword(password);
-    if (!passwordValidation.isValid) {
-      setError(passwordValidation.message);
+    if (!validateLoginPassword(password).isValid) {
+      setErrorState(t('auth.login.errors.passwordRequired'));
       return;
     }
 
-    setLoading(true);
     try {
-      const res = await loginApi(email, password);
-      await AsyncStorage.setItem('accessToken', res.access_token);
-      router.replace('/(main)/home');
-    } catch (e: any) {
-      setError(e.message || 'Erreur lors de la connexion');
+      dispatch(setLoading(true));
+      setErrorState(null);
+      const response = await loginApi(email, password);
+      dispatch(setCredentials({ 
+        user: response.user, 
+        accessToken: response.accessToken,
+        refreshToken: response.refreshToken
+      }));
+      router.replace('/(tabs)');
+    } catch (err) {
+      dispatch(setError(err instanceof Error ? err.message : 'An error occurred'));
+      setErrorState(err instanceof Error ? err.message : 'An error occurred');
     } finally {
-      setLoading(false);
+      dispatch(setLoading(false));
     }
   };
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const token = await AsyncStorage.getItem('accessToken');
-      if (token) {
-        router.replace('/(main)/home');
-      }
-    };
-    checkAuth();
-  }, []);
 
   return (
     <View style={{ flex: 1 }}>
@@ -385,8 +387,19 @@ export default function LoginScreen() {
                 {error ? (
                   <Text style={{ color: 'red', marginBottom: 8, textAlign: 'center' }}>{error}</Text>
                 ) : null}
-                <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={loading}>
-                  <Text style={styles.loginButtonText}>{loading ? t('auth.login.loading') : t('auth.login.submit')}</Text>
+                <TouchableOpacity 
+                  style={styles.loginButton} 
+                  onPress={handleLogin} 
+                  disabled={loading || !isFormValid}
+                >
+                  {loading ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <ActivityIndicator color="#fff" style={{ marginRight: 8 }} />
+                      <Text style={styles.loginButtonText}>{t('auth.login.loading')}</Text>
+                    </View>
+                  ) : (
+                    <Text style={styles.loginButtonText}>{t('auth.login.submit')}</Text>
+                  )}
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.forgot} onPress={() => router.push('/(auth)/forgot-password')}>

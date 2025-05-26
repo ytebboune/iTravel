@@ -2,16 +2,17 @@ import React, { useRef } from "react";
 import { View, Text, Image, TextInput, TouchableOpacity, StyleSheet, Dimensions, KeyboardAvoidingView, Platform, ScrollView, useWindowDimensions } from 'react-native';
 import { Link } from 'expo-router';
 import { Ionicons, AntDesign } from '@expo/vector-icons';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import COLORS from '../../theme/colors';
 import { AuthHeader, AuthDivider } from './_layout';
 import { getAuthBackgroundImage } from '../../utils/getAuthBackgroundImage';
 import { useRouter } from 'expo-router';
 import { register as registerApi } from '../../services/authService';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { validateEmail, validatePassword, validateConfirmPassword } from '@/utils/validation';
 import { useTranslation } from 'react-i18next';
 import { LanguageSelector } from '@/components/LanguageSelector';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { setCredentials, setLoading, setError } from '@/store/authSlice';
 
 const { width, height } = Dimensions.get('window');
 
@@ -24,10 +25,11 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [error, setErrorState] = useState<string | null>(null);
+  const loading = useAppSelector(state => state.auth.loading);
   const router = useRouter();
   const { t } = useTranslation();
+  const dispatch = useAppDispatch();
 
   const isDesktopStandard = windowWidth >= 1280;
 
@@ -39,48 +41,51 @@ export default function RegisterScreen() {
     ? Math.min(windowWidth * 0.4, 380)
     : Math.min(windowWidth * 0.92, 380);
 
+  // Validation des champs
+  const isFormValid = 
+    username.trim().length > 0 && 
+    validateEmail(email) && 
+    validatePassword(password) && 
+    validateConfirmPassword(password, confirmPassword);
+
   const handleRegister = async () => {
-    setError('');
+    setErrorState(null);
     
     const emailValidation = validateEmail(email);
     if (!emailValidation.isValid) {
-      setError(emailValidation.message);
+      setErrorState(emailValidation.message);
       return;
     }
 
     const passwordValidation = validatePassword(password);
     if (!passwordValidation.isValid) {
-      setError(passwordValidation.message);
+      setErrorState(passwordValidation.message);
       return;
     }
 
     const confirmPasswordValidation = validateConfirmPassword(password, confirmPassword);
     if (!confirmPasswordValidation.isValid) {
-      setError(confirmPasswordValidation.message);
+      setErrorState(confirmPasswordValidation.message);
       return;
     }
 
-    setLoading(true);
     try {
-      const res = await registerApi(username, email, password);
-      await AsyncStorage.setItem('accessToken', res.access_token);
-      router.replace('/(main)/home');
-    } catch (e: any) {
-      setError(e.message || 'Erreur lors de l\'inscription');
+      dispatch(setLoading(true));
+      const response = await registerApi(username, email, password);
+      dispatch(setCredentials({ 
+        user: response.user, 
+        accessToken: response.accessToken,
+        refreshToken: response.refreshToken
+      }));
+      router.replace('/(tabs)');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
+      dispatch(setError(errorMessage));
+      setErrorState(errorMessage);
     } finally {
-      setLoading(false);
+      dispatch(setLoading(false));
     }
   };
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const token = await AsyncStorage.getItem('accessToken');
-      if (token) {
-        router.replace('/(main)/home');
-      }
-    };
-    checkAuth();
-  }, []);
 
   const styles = StyleSheet.create({
     container: {
@@ -182,6 +187,7 @@ export default function RegisterScreen() {
       alignItems: 'center',
       marginBottom: 16,
       alignSelf: 'stretch',
+      opacity: isFormValid ? 1 : 0.5,
     },
     loginButtonText: {
       color: '#fff',
@@ -267,6 +273,7 @@ export default function RegisterScreen() {
                 <View style={styles.inputsRow}>
                   <View style={styles.inputColumn}>
                     <TextInput
+                      ref={emailRef}
                       style={styles.input}
                       placeholder={t('auth.register.username')}
                       placeholderTextColor={COLORS.placeholder}
@@ -438,8 +445,14 @@ export default function RegisterScreen() {
             {error ? (
               <Text style={{ color: 'red', marginBottom: 8, textAlign: 'center' }}>{error}</Text>
             ) : null}
-            <TouchableOpacity style={styles.loginButton} onPress={handleRegister} disabled={loading}>
-              <Text style={styles.loginButtonText}>{loading ? t('auth.register.loading') : t('auth.register.submit')}</Text>
+            <TouchableOpacity 
+              style={styles.loginButton} 
+              onPress={handleRegister} 
+              disabled={loading || !isFormValid}
+            >
+              <Text style={styles.loginButtonText}>
+                {loading ? t('auth.register.loading') : t('auth.register.submit')}
+              </Text>
             </TouchableOpacity>
             <AuthDivider />
             <TouchableOpacity style={styles.socialButton}>

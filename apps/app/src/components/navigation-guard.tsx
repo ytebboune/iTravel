@@ -15,7 +15,7 @@ export function NavigationGuard({ children }: { children: React.ReactNode }) {
       router.replace('/(auth)/login');
     } else if (isAuthenticated && inAuthGroup) {
       // Rediriger vers la page d'accueil si l'utilisateur est authentifié
-      router.replace('/(main)');
+      router.replace('/(tabs)');
     }
   }, [isAuthenticated, segments]);
 

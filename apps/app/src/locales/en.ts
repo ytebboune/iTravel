@@ -55,7 +55,33 @@ export default {
         confirmPasswordRequired: 'Password confirmation is required',
         passwordsDontMatch: 'Passwords do not match',
       }
-    }
+    },
+    forgotPassword: {
+      title: 'Forgot Password',
+      desc: 'Enter your email address to receive a password reset link.',
+      email: 'Email address',
+      submit: 'Send Reset Link',
+      loading: 'Sending...',
+      success: 'If an account exists with this email, you will receive a password reset link.',
+      backToLogin: 'Back to Login',
+      errors: {
+        emailRequired: 'Email is required',
+        emailInvalid: 'Please enter a valid email address',
+      }
+    },
+    reset: {
+      title: 'New Password',
+      desc: 'Choose a new password.',
+      password: 'New password',
+      confirm: 'Confirm password',
+      submit: 'Reset',
+      loading: 'Sending...',
+      success: 'Your password has been successfully reset.',
+      error: 'Error during password reset.',
+      errorLength: 'Password must be at least 8 characters long.',
+      errorMatch: 'Passwords do not match.',
+      backToLogin: 'Back to Login',
+    },
   },
   home: {
     welcome: 'Welcome to iTravel!',

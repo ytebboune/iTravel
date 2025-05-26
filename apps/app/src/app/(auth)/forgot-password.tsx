@@ -1,27 +1,61 @@
-import { View, Text, Image, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, Text, Image, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, StyleSheet, useWindowDimensions, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import COLORS from '../../theme/colors';
 import { AuthHeader, AuthDivider } from './_layout';
 import { getAuthBackgroundImage } from '../../utils/getAuthBackgroundImage';
 import { forgotPassword } from '../../services/authService';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LanguageSelector } from '@/components/LanguageSelector';
+import { validateEmail } from '@/utils/validation';
 
 export default function ForgotPasswordScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const isLandscape = windowWidth > windowHeight;
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isI18nReady, setIsI18nReady] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    if (i18n.isInitialized) {
+      setIsI18nReady(true);
+    } else {
+      i18n.on('initialized', () => {
+        setIsI18nReady(true);
+      });
+    }
+  }, [i18n]);
 
   const CARD_WIDTH = isLandscape
     ? Math.min(windowWidth * 0.4, 380)
     : Math.min(windowWidth * 0.92, 380);
+
+  // Validation des champs
+  const isFormValid = email.trim().length > 0 && validateEmail(email).isValid;
+
+  const handleSubmit = async () => {
+    if (!isFormValid) {
+      setError(t('auth.login.errors.emailInvalid'));
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError('');
+      await forgotPassword(email);
+      setSent(true);
+    } catch (err) {
+      console.error('Forgot password error:', err);
+      setError(err instanceof Error ? err.message : t('common.error'));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const styles = StyleSheet.create({
     container: {
@@ -83,6 +117,7 @@ export default function ForgotPasswordScreen() {
       padding: Math.min(16, windowHeight * 0.02),
       alignItems: 'center',
       marginBottom: Math.min(12, windowHeight * 0.015),
+      opacity: isFormValid ? 1 : 0.5,
     },
     loginButtonText: {
       color: '#fff',
@@ -101,24 +136,31 @@ export default function ForgotPasswordScreen() {
       textAlign: 'center',
       marginBottom: 8,
     },
+    success: {
+      color: COLORS.primary,
+      textAlign: 'center',
+      marginBottom: 16,
+      fontSize: 16,
+    },
+    description: {
+      color: COLORS.text,
+      textAlign: 'center',
+      marginBottom: 24,
+      fontSize: 16,
+      opacity: 0.8,
+    },
+    bottomLinkWrapper: {
+      // ... existing code ...
+    },
   });
 
-  const handleSubmit = async () => {
-    setError('');
-    setLoading(true);
-    try {
-      const res = await forgotPassword(email);
-      if (res.ok) {
-        setSent(true);
-      } else {
-        setError(t('auth.forgot.error') || 'Erreur lors de la demande.');
-      }
-    } catch (e) {
-      setError(t('auth.forgot.error') || 'Erreur lors de la demande.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (!isI18nReady) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1 }}>
@@ -132,7 +174,10 @@ export default function ForgotPasswordScreen() {
           />
         </View>
         {/* Header */}
-        <AuthHeader subtitle={t('auth.forgot.title') || 'Mot de passe oublié'} showBackButton={true} />
+        <AuthHeader 
+          subtitle={t('auth.forgotPassword.title')} 
+          showBackButton={true}
+        />
         {/* Card centering wrapper */}
         <View style={styles.centerWrapper}>
           <KeyboardAvoidingView
@@ -142,45 +187,51 @@ export default function ForgotPasswordScreen() {
             <View style={styles.cardOuter}>
               <BlurView intensity={80} tint="light" style={StyleSheet.absoluteFill} />
               <View style={styles.cardContent}>
-                {sent ? (
-                  <Text style={styles.info}>{t('auth.forgot.sent') || 'Si cet email existe, un lien de réinitialisation a été envoyé.'}</Text>
-                ) : (
+                {!sent ? (
                   <>
-                    <Text
-                      style={{
-                        textAlign: 'center',
-                        marginBottom: 20,
-                        marginTop: 4,
-                        fontFamily: 'Inter-Medium',
-                        fontSize: Math.min(18, windowWidth * 0.05),
-                        color: 'rgba(34,46,58,0.7)',
-                        textShadowColor: 'rgba(0,0,0,0.06)',
-                        textShadowOffset: { width: 0, height: 1 },
-                        textShadowRadius: 2,
-                        maxWidth: 340,
-                        alignSelf: 'center',
-                      }}
-                    >
-                      {t('auth.forgot.desc')}
+                    <Text style={styles.description}>
+                      {t('auth.forgotPassword.desc')}
                     </Text>
                     <TextInput
                       style={styles.input}
-                      placeholder={t('auth.forgot.email') || 'Adresse email'}
+                      placeholder={t('auth.forgotPassword.email')}
                       placeholderTextColor={COLORS.placeholder}
                       value={email}
                       onChangeText={setEmail}
                       autoCapitalize="none"
                       keyboardType="email-address"
+                      editable={!loading}
+                      returnKeyType="done"
+                      onSubmitEditing={handleSubmit}
                     />
-                    {error ? <Text style={styles.error}>{error}</Text> : null}
-                    <TouchableOpacity style={styles.loginButton} onPress={handleSubmit} disabled={loading || !email}>
-                      <Text style={styles.loginButtonText}>{loading ? t('auth.forgot.loading') || 'Envoi...' : t('auth.forgot.submit') || 'Envoyer'}</Text>
-                    </TouchableOpacity>
-                    <AuthDivider />
-                    <TouchableOpacity onPress={() => router.replace('/(auth)/login')}>
-                      <Text style={{ color: 'rgba(34,46,58,0.7)', fontWeight: '600', fontSize: Math.min(15, windowWidth * 0.038), fontFamily: 'Inter-Medium', textAlign: 'center' }}>{t('auth.forgot.back')}</Text>
+                    {error ? (
+                      <Text style={{ color: 'red', marginBottom: 8, textAlign: 'center' }}>{error}</Text>
+                    ) : null}
+                    <TouchableOpacity 
+                      style={styles.loginButton} 
+                      onPress={handleSubmit}
+                      disabled={loading || !isFormValid}
+                    >
+                      {loading ? (
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <ActivityIndicator color="#fff" style={{ marginRight: 8 }} />
+                          <Text style={styles.loginButtonText}>{t('auth.forgotPassword.loading')}</Text>
+                        </View>
+                      ) : (
+                        <Text style={styles.loginButtonText}>{t('auth.forgotPassword.submit')}</Text>
+                      )}
                     </TouchableOpacity>
                   </>
+                ) : (
+                  <View style={{ alignItems: 'center' }}>
+                    <Text style={styles.info}>{t('auth.forgotPassword.success')}</Text>
+                    <TouchableOpacity 
+                      style={[styles.loginButton, { marginTop: 16 }]} 
+                      onPress={() => router.replace('/(auth)/login')}
+                    >
+                      <Text style={styles.loginButtonText}>{t('auth.forgotPassword.backToLogin')}</Text>
+                    </TouchableOpacity>
+                  </View>
                 )}
               </View>
             </View>

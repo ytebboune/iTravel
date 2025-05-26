@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { logout } from '../../services/authService';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '@/providers/LanguageProvider';
 import { LanguageSelector } from '@/components/LanguageSelector';
@@ -13,7 +12,6 @@ export default function Home() {
 
   const handleLogout = async () => {
     await logout();
-    await AsyncStorage.removeItem('accessToken');
     router.replace('/(auth)/login');
   };
 
