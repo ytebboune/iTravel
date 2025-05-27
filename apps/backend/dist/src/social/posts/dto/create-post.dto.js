@@ -24,4 +24,9 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Array)
 ], CreatePostDto.prototype, "photos", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreatePostDto.prototype, "cityId", void 0);
 //# sourceMappingURL=create-post.dto.js.map

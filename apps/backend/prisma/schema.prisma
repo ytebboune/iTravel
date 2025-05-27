@@ -114,6 +114,13 @@ model Country {
   name        String   @unique
   code        String   @unique
   flag        String?
+  phoneCode   String?  // Code téléphonique international
+  currency    String?  // Devise
+  currencySymbol String? // Symbole de la devise
+  latitude    Float?   // Latitude du centre du pays
+  longitude   Float?   // Longitude du centre du pays
+  emoji       String?  // Emoji du drapeau
+  emojiU      String?  // Code Unicode de l'emoji
   cities      City[]
   visitedBy   VisitedPlace[]
 
@@ -125,10 +132,11 @@ model City {
   id          String   @id @default(uuid())
   name        String
   countryId   String
+  latitude    Float?   // Latitude de la ville
+  longitude   Float?   // Longitude de la ville
   visitedBy   VisitedPlace[]
-
-  // Relations
   country     Country  @relation(fields: [countryId], references: [id])
+  posts       Post[]
 
   @@unique([name, countryId])
   @@index([countryId])
@@ -140,6 +148,8 @@ model Post {
   id          String   @id @default(uuid())
   userId      String
   content     String
+  cityId      String?
+  city        City?     @relation(fields: [cityId], references: [id])
   photos      Photo[]
   likes       Like[]
   comments    SocialComment[]
@@ -150,6 +160,7 @@ model Post {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([cityId])
   @@map("posts")
 }
 

@@ -14,7 +14,12 @@ async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     const configService = app.get(config_1.ConfigService);
     const logger = new common_2.Logger('Bootstrap');
-    app.enableCors({ origin: true, credentials: true });
+    app.enableCors({
+        origin: true,
+        credentials: true,
+        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+        allowedHeaders: 'Content-Type, Accept, Authorization',
+    });
     app.use((0, cookie_parser_1.default)());
     app.useGlobalPipes(new common_1.ValidationPipe({
         whitelist: true,
@@ -28,8 +33,8 @@ async function bootstrap() {
     const document = swagger_1.SwaggerModule.createDocument(app, swaggerConfig);
     swagger_1.SwaggerModule.setup('api', app, document);
     const port = process.env.PORT || 3000;
-    await app.listen(port);
-    logger.log(`Application is running on: http://localhost:${port}`);
+    await app.listen(port, '0.0.0.0');
+    logger.log(`Application is running on: http://0.0.0.0:${port}`);
 }
 bootstrap();
 //# sourceMappingURL=main.js.map

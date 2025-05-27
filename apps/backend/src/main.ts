@@ -12,7 +12,12 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
   // Configuration CORS
-  app.enableCors({ origin: true, credentials: true });
+  app.enableCors({ 
+    origin: true, 
+    credentials: true,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type, Accept, Authorization',
+  });
 
   // Middleware
   app.use(cookieParser());
@@ -34,7 +39,7 @@ async function bootstrap() {
   // --- Fin Swagger ---
 
   const port = process.env.PORT || 3000;
-  await app.listen(port);
-  logger.log(`Application is running on: http://localhost:${port}`);
+  await app.listen(port, '0.0.0.0');
+  logger.log(`Application is running on: http://0.0.0.0:${port}`);
 }
 bootstrap();

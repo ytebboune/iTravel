@@ -8,4 +8,8 @@ export class CreatePostDto {
   @IsArray()
   @IsOptional()
   photos?: string[];
+
+  @IsString()
+  @IsOptional()
+  cityId?: string;
 } 

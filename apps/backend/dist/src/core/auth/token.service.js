@@ -114,8 +114,11 @@ let TokenService = class TokenService {
     async verifyRefreshToken(token) {
         const refreshToken = await this.prisma.refreshToken.findUnique({
             where: { token },
+            include: {
+                user: true,
+            },
         });
-        if (!refreshToken || refreshToken.expiresAt < new Date()) {
+        if (!refreshToken || refreshToken.expiresAt < new Date() || refreshToken.type !== client_1.TokenType.REFRESH) {
             return null;
         }
         return refreshToken.userId;

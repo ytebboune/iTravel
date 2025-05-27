@@ -25,4 +25,9 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Array)
 ], UpdatePostDto.prototype, "photos", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], UpdatePostDto.prototype, "cityId", void 0);
 //# sourceMappingURL=update-post.dto.js.map

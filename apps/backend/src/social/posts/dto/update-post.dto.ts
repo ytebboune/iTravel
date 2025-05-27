@@ -9,4 +9,8 @@ export class UpdatePostDto {
   @IsArray()
   @IsOptional()
   photos?: string[];
+
+  @IsString()
+  @IsOptional()
+  cityId?: string;
 } 

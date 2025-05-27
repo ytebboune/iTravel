@@ -124,9 +124,12 @@ export class TokenService {
   async verifyRefreshToken(token: string): Promise<string | null> {
     const refreshToken = await this.prisma.refreshToken.findUnique({
       where: { token },
+      include: {
+        user: true,
+      },
     });
 
-    if (!refreshToken || refreshToken.expiresAt < new Date()) {
+    if (!refreshToken || refreshToken.expiresAt < new Date() || refreshToken.type !== TokenType.REFRESH) {
       return null;
     }
 
