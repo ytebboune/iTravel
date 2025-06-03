@@ -6,8 +6,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import COLORS from '../../theme/colors';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useEffect } from 'react';
-import { getAccessToken } from '../../services/authService';
 
 const { width } = Dimensions.get('window');
 const isDesktop = width >= 1024;
@@ -44,31 +42,7 @@ function LogoTitle() {
       </View>
     );
   }
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-      <Text
-        style={{
-          fontSize: 52,
-          fontFamily: 'MontserratAlternates-Bold',
-          color: COLORS.primaryLight,
-          letterSpacing: 2.5,
-          textTransform: 'uppercase',
-          textAlign: 'center',
-          marginBottom: 6,
-        }}
-      >
-        iTravel
-      </Text>
-      <View style={{
-        width: 14,
-        height: 14,
-        borderRadius: 7,
-        backgroundColor: COLORS.birdBrown,
-        marginLeft: 10,
-        marginBottom: 8,
-      }} />
-    </View>
-  );
+  return null;
 }
 
 export function AuthHeader({ subtitle, showBackButton = false }: { subtitle: string, showBackButton?: boolean }) {
@@ -166,22 +140,6 @@ const styles = StyleSheet.create({
 });
 
 export default function AuthLayout() {
-  // Vérifier si l'utilisateur est déjà connecté
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const accessToken = await getAccessToken();
-        if (accessToken) {
-          console.log('User already logged in, redirecting to home');
-          router.replace('/(tabs)');
-        }
-      } catch (error) {
-        console.error('Error checking auth status:', error);
-      }
-    };
-    checkAuth();
-  }, []);
-
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="login" />

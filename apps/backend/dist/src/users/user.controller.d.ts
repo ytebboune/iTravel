@@ -71,6 +71,7 @@ export declare class UserController {
         updatedAt: Date;
         userId: string;
         content: string;
+        cityId: string | null;
     })[]>;
     getProfileById(userId: string, targetUserId: string): Promise<GetProfileDto>;
     getPublicProfile(targetUserId: string): Promise<GetProfileDto>;

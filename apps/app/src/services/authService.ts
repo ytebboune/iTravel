@@ -5,6 +5,7 @@ import { STORAGE_KEYS, getSecureItem, setSecureItem, removeSecureItem } from './
 import { API_URL } from '../constants';
 import { store } from '../store/store';
 import { updateTokens, clearAuth } from '../store/authSlice';
+import { router } from 'expo-router';
 
 // Cache pour éviter les refresh multiples
 let refreshPromise: Promise<any> | null = null;
@@ -160,6 +161,7 @@ export async function refreshToken() {
   } catch (error) {
     console.error('Refresh token error:', error);
     await clearTokens();
+    router.replace('/(auth)/login');
     throw error;
   }
 }

@@ -49,15 +49,15 @@ export declare class SettingsService {
     requestFollow(requesterId: string, requestedToId: string): Promise<{
         id: string;
         createdAt: Date;
-        followerId: string;
-        followingId: string;
-    } | {
-        id: string;
-        createdAt: Date;
         updatedAt: Date;
         status: import(".prisma/client").$Enums.RequestStatus;
         requesterId: string;
         requestedToId: string;
+    } | {
+        id: string;
+        createdAt: Date;
+        followerId: string;
+        followingId: string;
     }>;
     handleFollowRequest(userId: string, requestId: string, accept: boolean): Promise<{
         message: string;

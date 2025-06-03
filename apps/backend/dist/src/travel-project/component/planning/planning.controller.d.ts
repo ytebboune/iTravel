@@ -32,10 +32,10 @@ export declare class PlanningController {
             projectId: string;
             date: Date;
             activityId: string | null;
+            planningId: string;
             startTime: Date;
             endTime: Date;
             notes: string | null;
-            planningId: string;
         })[];
     } & {
         id: string;
@@ -64,10 +64,10 @@ export declare class PlanningController {
         projectId: string;
         date: Date;
         activityId: string | null;
+        planningId: string;
         startTime: Date;
         endTime: Date;
         notes: string | null;
-        planningId: string;
     }>;
     updateActivity(projectId: string, activityId: string, userId: string, updateActivityDto: AddActivityToPlanningDto): Promise<{
         activity: {
@@ -88,10 +88,10 @@ export declare class PlanningController {
         projectId: string;
         date: Date;
         activityId: string | null;
+        planningId: string;
         startTime: Date;
         endTime: Date;
         notes: string | null;
-        planningId: string;
     }>;
     deleteActivity(projectId: string, activityId: string, userId: string): Promise<{
         activity: {
@@ -112,9 +112,9 @@ export declare class PlanningController {
         projectId: string;
         date: Date;
         activityId: string | null;
+        planningId: string;
         startTime: Date;
         endTime: Date;
         notes: string | null;
-        planningId: string;
     }>;
 }

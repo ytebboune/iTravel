@@ -1,7 +1,7 @@
-import React, { useRef, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions, Platform, FlatList } from 'react-native';
+import React, { useRef, useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions, Platform, FlatList, TextInput, Modal, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useAppDispatch } from '@/store/hooks';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logout } from '@/services/authService';
 import { useRouter } from 'expo-router';
 import COLORS from '@/theme/colors';
@@ -9,98 +9,171 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { getPosts, likePost, unlikePost, commentPost } from '../../services/api';
 
 const { width } = Dimensions.get('window');
 const IS_MOBILE = width < 600;
 const POST_WIDTH = width; // Suppression du padding pour utiliser toute la largeur
 
-// Mock data for posts
-const MOCK_POSTS = [
-  {
-    id: 1,
-    user: {
-      name: 'Pauline Durant',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330',
-    },
-    timeAgo: 'Il y a 2h',
-    location: 'Chamonix, France',
-    content: 'Exploring the mountains this summer! 🏔️',
-    image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b',
-    likes: 128,
-    comments: 8,
-  },
-  {
-    id: 2,
-    user: {
-      name: 'Yohann Robert',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d',
-    },
-    timeAgo: 'Il y a 1 jour',
-    location: 'Barcelone, Espagne',
-    content: 'City break à Barcelone 👌',
-    image: 'https://images.unsplash.com/photo-1539037116277-4db20889f2d4',
-    likes: 98,
-    comments: 2,
-  }
-];
+// Chargement des posts depuis l'API centralisée
+const fetchPosts = getPosts;
 
-interface Post {
-  id: number;
+// Ajoute le type Comment
+interface Comment {
+  id: string;
   user: {
-    name: string;
+    username: string;
     avatar: string;
   };
-  timeAgo: string;
-  location: string;
   content: string;
-  image: string;
-  likes: number;
-  comments: number;
 }
 
-const Post = ({ post }: { post: Post }) => (
-  <View style={styles.postContainer}>
-    <View style={styles.postHeader}>
-      <View style={styles.userInfo}>
-        <Image source={{ uri: post.user.avatar }} style={styles.avatar} />
-        <View>
-          <Text style={styles.username}>{post.user.name}</Text>
-          <Text style={styles.location}>{post.location}</Text>
-          <Text style={styles.timeAgo}>{post.timeAgo}</Text>
+// Modifie le type Post pour intégrer les likes et commentaires réels
+interface Post {
+  id: string;
+  user: {
+    username: string;
+    avatar: string;
+  };
+  content: string;
+  photos: { url: string }[];
+  likes: { user: { id: string } }[];
+  comments: Comment[];
+}
+
+// Modale pour tous les commentaires d'un post
+function CommentsModal({ visible, onClose, post, currentUserId, onCommentAdd }: { visible: boolean; onClose: () => void; post: Post; currentUserId: string; onCommentAdd: () => void }) {
+  const [comments, setComments] = useState<Comment[]>(post.comments);
+  const [commentInput, setCommentInput] = useState('');
+  const [isCommenting, setIsCommenting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const inputRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    setComments(post.comments);
+  }, [post.comments]);
+
+  const handleComment = async () => {
+    if (!commentInput.trim() || isCommenting) return;
+    setIsCommenting(true);
+    try {
+      const newComment = await commentPost(post.id, commentInput.trim());
+      setComments([...comments, newComment]);
+      setCommentInput('');
+      onCommentAdd();
+      setTimeout(() => inputRef.current?.focus(), 100); // UX : focus après envoi
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setIsCommenting(false);
+    }
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={onClose}>
+      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.25)', justifyContent: 'flex-end' }}>
+        <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 18, borderTopRightRadius: 18, maxHeight: '80%' }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderColor: '#eee' }}>
+            <Text style={{ fontWeight: '700', fontSize: 16 }}>Commentaires</Text>
+            <Pressable onPress={onClose}><Ionicons name="close" size={24} color={COLORS.text} /></Pressable>
+          </View>
+          <ScrollView style={{ padding: 16 }} keyboardShouldPersistTaps="handled">
+            {comments.length === 0 && <Text style={{ color: COLORS.placeholder }}>Aucun commentaire</Text>}
+            {comments.map((c) => (
+              <View key={c.id} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+                <Image source={{ uri: c.user.avatar }} style={{ width: 32, height: 32, borderRadius: 16, marginRight: 10 }} />
+                <View style={{ backgroundColor: '#f3f3f3', borderRadius: 16, padding: 10, flex: 1 }}>
+                  <Text style={{ fontWeight: '600', marginBottom: 2 }}>{c.user.username}</Text>
+                  <Text style={{ color: COLORS.text }}>{c.content}</Text>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+          <View style={{ flexDirection: 'row', alignItems: 'center', padding: 12, borderTopWidth: 1, borderColor: '#eee', backgroundColor: '#fafbfc' }}>
+            <TextInput
+              ref={inputRef}
+              style={{ flex: 1, borderWidth: 0, backgroundColor: '#f3f3f3', borderRadius: 20, padding: 12, marginRight: 8, fontSize: 15 }}
+              placeholder="Ajouter un commentaire..."
+              value={commentInput}
+              onChangeText={setCommentInput}
+              editable={!isCommenting}
+              onSubmitEditing={handleComment}
+              returnKeyType="send"
+              blurOnSubmit={false}
+            />
+            <TouchableOpacity onPress={handleComment} disabled={isCommenting || !commentInput.trim()} style={{ opacity: commentInput.trim() ? 1 : 0.4 }}>
+              <Ionicons name="send" size={24} color={COLORS.primary} />
+            </TouchableOpacity>
+          </View>
+          {error && <Text style={{ color: 'red', margin: 8 }}>{error}</Text>}
         </View>
       </View>
-      <TouchableOpacity>
-        <Ionicons name="ellipsis-horizontal" size={24} color={COLORS.text} />
-      </TouchableOpacity>
-    </View>
+    </Modal>
+  );
+}
 
-    <View style={styles.imageWrapper}>
-      <Image source={{ uri: post.image }} style={styles.postImage} />
-    </View>
+// Ajoute le composant Post interactif
+const Post = ({ post, currentUserId, onLikeChange, onCommentAdd, onShowAllComments }: { post: Post; currentUserId: string; onLikeChange?: () => void; onCommentAdd?: () => void; onShowAllComments?: () => void }) => {
+  const [likes, setLikes] = useState(post.likes.length);
+  const [hasLiked, setHasLiked] = useState(post.likes.some(like => like.user.id === currentUserId));
+  const [isLiking, setIsLiking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-    <View style={styles.postContent}>
-      <Text style={styles.likes}>{post.likes} j'aime</Text>
-      <Text style={styles.caption}>{post.content}</Text>
-    </View>
+  const handleLike = async () => {
+    if (isLiking) return;
+    setIsLiking(true);
+    try {
+      if (hasLiked) {
+        await unlikePost(post.id);
+        setLikes(likes - 1);
+        setHasLiked(false);
+      } else {
+        await likePost(post.id);
+        setLikes(likes + 1);
+        setHasLiked(true);
+      }
+      onLikeChange && onLikeChange();
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setIsLiking(false);
+    }
+  };
 
-    <View style={styles.postActions}>
-      <View style={styles.leftActions}>
-        <TouchableOpacity style={styles.actionButton}>
-          <Ionicons name="heart-outline" size={24} color={COLORS.secondary} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton}>
-          <Ionicons name="chatbubble-outline" size={24} color={COLORS.secondary} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton}>
-          <MaterialCommunityIcons name="repeat-variant" size={28} color={COLORS.secondary} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton}>
-          <Ionicons name="paper-plane-outline" size={24} color={COLORS.secondary} />
+  return (
+    <View style={styles.postContainer}>
+      <View style={styles.postHeader}>
+        <View style={styles.userInfo}>
+          <Image source={{ uri: post.user.avatar }} style={styles.avatar} />
+          <View>
+            <Text style={styles.username}>{post.user.username}</Text>
+          </View>
+        </View>
+        <TouchableOpacity>
+          <Ionicons name="ellipsis-horizontal" size={24} color={COLORS.text} />
         </TouchableOpacity>
       </View>
+      <View style={styles.imageWrapper}>
+        <Image source={{ uri: post.photos?.[0]?.url || '' }} style={styles.postImage} />
+      </View>
+      <View style={styles.postActions}>
+        <View style={styles.leftActions}>
+          <TouchableOpacity style={styles.actionButton} onPress={handleLike} disabled={isLiking}>
+            <Ionicons name={hasLiked ? 'heart' : 'heart-outline'} size={24} color={hasLiked ? 'red' : COLORS.secondary} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionButton} onPress={onShowAllComments}>
+            <Ionicons name="chatbubble-outline" size={24} color={COLORS.secondary} />
+          </TouchableOpacity>
+        </View>
+      </View>
+      <View style={styles.postContent}>
+        <Text style={styles.likes}>{likes} j'aime</Text>
+        <Text style={styles.caption}>{post.content}</Text>
+        {error && <Text style={{ color: 'red', marginTop: 4 }}>{error}</Text>}
+      </View>
     </View>
-  </View>
-);
+  );
+};
 
 const MOCK_USER = {
   name: 'Pauline Durant',
@@ -159,9 +232,15 @@ export default function HomeScreen() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const user = useAppSelector(state => state.auth.user);
+  const currentUserId = user?.id;
   const hasProject = true; // Passe à false pour tester le mode "conseil"
   const [activeIndex, setActiveIndex] = useState(0);
   const carouselRef = useRef<FlatList>(null);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showCommentsPostId, setShowCommentsPostId] = useState<string | null>(null);
 
   const handleLogout = async () => {
     try {
@@ -171,6 +250,23 @@ export default function HomeScreen() {
       console.error('Logout error:', error);
     }
   };
+
+  // Rafraîchir le feed (ex: après un like/comment)
+  const refreshFeed = async () => {
+    setLoading(true);
+    try {
+      const data = await fetchPosts();
+      setPosts(data);
+    } catch (err: any) {
+      setError(err.message || 'Erreur inconnue');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    refreshFeed();
+  }, []);
 
   // Préparer les slides du carousel
   const carouselData: CarouselItem[] = hasProject
@@ -289,8 +385,20 @@ export default function HomeScreen() {
 
       {/* Feed */}
       <ScrollView style={styles.feed}>
-        {MOCK_POSTS.map(post => (
-          <Post key={post.id} post={post} />
+        {loading && <Text style={{ textAlign: 'center', marginTop: 24 }}>Chargement du fil d'actualité...</Text>}
+        {error && <Text style={{ color: 'red', textAlign: 'center', marginTop: 24 }}>{error}</Text>}
+        {!loading && !error && posts.map((post: any) => (
+          <Post key={post.id} post={{
+            id: post.id,
+            user: {
+              username: post.user?.username || '',
+              avatar: post.user?.avatar || '',
+            },
+            content: post.content,
+            photos: post.photos || [],
+            likes: post.likes || [],
+            comments: post.comments || [],
+          }} currentUserId={currentUserId || ''} onLikeChange={refreshFeed} onCommentAdd={refreshFeed} onShowAllComments={() => setShowCommentsPostId(post.id)} />
         ))}
       </ScrollView>
 
@@ -321,6 +429,17 @@ export default function HomeScreen() {
           <Text style={styles.navLabel}>Profil</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Modale pour tous les commentaires d'un post */}
+      {showCommentsPostId && posts.find(p => p.id === showCommentsPostId) && (
+        <CommentsModal
+          visible={!!showCommentsPostId}
+          onClose={() => setShowCommentsPostId(null)}
+          post={posts.find(p => p.id === showCommentsPostId) as Post}
+          currentUserId={currentUserId || ''}
+          onCommentAdd={refreshFeed}
+        />
+      )}
     </View>
   );
 }

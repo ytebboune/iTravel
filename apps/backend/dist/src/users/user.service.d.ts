@@ -72,6 +72,7 @@ export declare class UserService {
         updatedAt: Date;
         userId: string;
         content: string;
+        cityId: string | null;
     })[]>;
     requestFollow(requesterId: string, targetId: string): Promise<FollowRequestDto>;
     acceptFollowRequest(userId: string, requestId: string): Promise<void>;

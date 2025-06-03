@@ -34,11 +34,20 @@ export declare class PlaceController {
             id: string;
             name: string;
             code: string;
+            phoneCode: string | null;
+            currency: string | null;
+            currencySymbol: string | null;
+            latitude: number | null;
+            longitude: number | null;
+            emoji: string | null;
+            emojiU: string | null;
             flag: string | null;
         };
         city: {
             id: string;
             name: string;
+            latitude: number | null;
+            longitude: number | null;
             countryId: string;
         };
     } & {
@@ -74,11 +83,20 @@ export declare class PlaceController {
             id: string;
             name: string;
             code: string;
+            phoneCode: string | null;
+            currency: string | null;
+            currencySymbol: string | null;
+            latitude: number | null;
+            longitude: number | null;
+            emoji: string | null;
+            emojiU: string | null;
             flag: string | null;
         };
         city: {
             id: string;
             name: string;
+            latitude: number | null;
+            longitude: number | null;
             countryId: string;
         };
     } & {
@@ -114,11 +132,20 @@ export declare class PlaceController {
             id: string;
             name: string;
             code: string;
+            phoneCode: string | null;
+            currency: string | null;
+            currencySymbol: string | null;
+            latitude: number | null;
+            longitude: number | null;
+            emoji: string | null;
+            emojiU: string | null;
             flag: string | null;
         };
         city: {
             id: string;
             name: string;
+            latitude: number | null;
+            longitude: number | null;
             countryId: string;
         };
     } & {
@@ -162,11 +189,20 @@ export declare class PlaceController {
             id: string;
             name: string;
             code: string;
+            phoneCode: string | null;
+            currency: string | null;
+            currencySymbol: string | null;
+            latitude: number | null;
+            longitude: number | null;
+            emoji: string | null;
+            emojiU: string | null;
             flag: string | null;
         };
         city: {
             id: string;
             name: string;
+            latitude: number | null;
+            longitude: number | null;
             countryId: string;
         };
     } & {
@@ -205,11 +241,20 @@ export declare class PlaceController {
             id: string;
             name: string;
             code: string;
+            phoneCode: string | null;
+            currency: string | null;
+            currencySymbol: string | null;
+            latitude: number | null;
+            longitude: number | null;
+            emoji: string | null;
+            emojiU: string | null;
             flag: string | null;
         };
         city: {
             id: string;
             name: string;
+            latitude: number | null;
+            longitude: number | null;
             countryId: string;
         };
     } & {

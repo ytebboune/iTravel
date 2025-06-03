@@ -39,10 +39,10 @@ export declare class PlanningService {
             projectId: string;
             date: Date;
             activityId: string | null;
+            planningId: string;
             startTime: Date;
             endTime: Date;
             notes: string | null;
-            planningId: string;
         })[];
     } & {
         id: string;
@@ -72,10 +72,10 @@ export declare class PlanningService {
         projectId: string;
         date: Date;
         activityId: string | null;
+        planningId: string;
         startTime: Date;
         endTime: Date;
         notes: string | null;
-        planningId: string;
     }>;
     updatePlanningActivity(projectId: string, activityId: string, userId: string, data: AddActivityToPlanningDto): Promise<{
         activity: {
@@ -96,10 +96,10 @@ export declare class PlanningService {
         projectId: string;
         date: Date;
         activityId: string | null;
+        planningId: string;
         startTime: Date;
         endTime: Date;
         notes: string | null;
-        planningId: string;
     }>;
     removeActivityFromPlanning(projectId: string, activityId: string, userId: string): Promise<{
         activity: {
@@ -120,9 +120,9 @@ export declare class PlanningService {
         projectId: string;
         date: Date;
         activityId: string | null;
+        planningId: string;
         startTime: Date;
         endTime: Date;
         notes: string | null;
-        planningId: string;
     }>;
 }
