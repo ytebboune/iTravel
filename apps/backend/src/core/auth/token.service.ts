@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 import { randomBytes } from 'crypto';
 import { Prisma, TokenType } from '@prisma/client';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class TokenService {
@@ -99,10 +100,10 @@ export class TokenService {
     });
   }
 
-  async createRefreshToken(userId: string, device: string): Promise<string> {
-    const token = randomBytes(32).toString('hex');
+  async createRefreshToken(userId: string, device: string, days: number = 7): Promise<string> {
+    const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30); // Expire dans 30 jours
+    expiresAt.setDate(expiresAt.getDate() + days);
 
     await this.prisma.refreshToken.create({
       data: {
@@ -145,6 +146,16 @@ export class TokenService {
   async deleteAllUserRefreshTokens(userId: string): Promise<void> {
     await this.prisma.refreshToken.deleteMany({
       where: { userId },
+    });
+  }
+
+  async deleteExpiredTokens(): Promise<void> {
+    await this.prisma.refreshToken.deleteMany({
+      where: {
+        expiresAt: {
+          lt: new Date(),
+        },
+      },
     });
   }
 } 

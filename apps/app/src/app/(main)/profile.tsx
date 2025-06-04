@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Button, StyleSheet } from 'react-native';
 import { getProfile } from '../../services/api';
-import { setTokens, getAccessToken, getRefreshToken, refreshToken } from '../../services/authService';
+import { getAuthData, setSecureItem, STORAGE_KEYS } from '../../services/secureStorage';
 
 export default function ProfileScreen() {
   const [profile, setProfile] = useState<any>(null);
@@ -13,9 +13,8 @@ export default function ProfileScreen() {
     setError('');
     setLoading(true);
     try {
-      // Vérifier les tokens avant la requête
-      const accessToken = await getAccessToken();
-      const refreshToken = await getRefreshToken();
+      // Get auth data using getAuthData
+      const { accessToken, refreshToken } = await getAuthData();
       setTokensState({ access: accessToken || '', refresh: refreshToken || '' });
       
       console.log('Fetching profile with tokens:', {
@@ -43,16 +42,34 @@ export default function ProfileScreen() {
     console.log('Breaking access token...');
     try {
       // On garde le refresh token valide mais on corrompt l'access token
-      const currentRefreshToken = await getRefreshToken();
-      if (!currentRefreshToken) {
+      const { refreshToken } = await getAuthData();
+      if (!refreshToken) {
         throw new Error('No refresh token available');
       }
-      await setTokens('FAUX_TOKEN', currentRefreshToken);
+      await setSecureItem(STORAGE_KEYS.AUTH.ACCESS_TOKEN, 'FAUX_TOKEN');
       console.log('Access token set to invalid value, keeping refresh token');
       fetchProfile();
     } catch (error) {
       console.error('Error breaking access token:', error);
       setError('Failed to test refresh token');
+    }
+  };
+
+  const handleRefreshToken = async () => {
+    try {
+      const response = await authService.refreshToken();
+      // ... rest of the code ...
+    } catch (error) {
+      // ... error handling ...
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+      // ... rest of the code ...
+    } catch (error) {
+      // ... error handling ...
     }
   };
 

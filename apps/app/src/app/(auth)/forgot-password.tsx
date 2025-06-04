@@ -4,11 +4,12 @@ import { BlurView } from 'expo-blur';
 import COLORS from '../../theme/colors';
 import { AuthHeader, AuthDivider } from './_layout';
 import { getAuthBackgroundImage } from '../../utils/getAuthBackgroundImage';
-import { forgotPassword } from '../../services/authService';
+import { authService } from '../../services/auth.service';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LanguageSelector } from '@/components/LanguageSelector';
 import { validateEmail } from '@/utils/validation';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function ForgotPasswordScreen() {
   const { t, i18n } = useTranslation();
@@ -20,6 +21,13 @@ export default function ForgotPasswordScreen() {
   const [loading, setLoading] = useState(false);
   const [isI18nReady, setIsI18nReady] = useState(false);
   const router = useRouter();
+  const { isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace('/(tabs)');
+    }
+  }, [isAuthenticated, router]);
 
   useEffect(() => {
     if (i18n.isInitialized) {
@@ -47,7 +55,7 @@ export default function ForgotPasswordScreen() {
     try {
       setLoading(true);
       setError('');
-      await forgotPassword(email);
+      await authService.forgotPassword(email);
       setSent(true);
     } catch (err) {
       console.error('Forgot password error:', err);

@@ -5,16 +5,14 @@ import { BlurView } from 'expo-blur';
 import COLORS from '../../theme/colors';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AuthHeader, AuthDivider } from './_layout';
 import { getAuthBackgroundImage } from '../../utils/getAuthBackgroundImage';
-import { login as loginApi } from '../../services/authService';
 import { validateEmail, validateLoginPassword } from '@/utils/validation';
 import { useTranslation } from 'react-i18next';
 import { LanguageSelector } from '@/components/LanguageSelector';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { setCredentials, setLoading, setError } from '@/store/authSlice';
+import { useAuth } from '@/hooks/useAuth';
 
 const { width, height } = Dimensions.get('window');
 
@@ -83,16 +81,20 @@ function LogoTitle() {
 
 export default function LoginScreen() {
   const { t } = useTranslation();
-  const dispatch = useAppDispatch();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const isLandscape = windowWidth > windowHeight;
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setErrorState] = useState<string | null>(null);
-  const loading = useAppSelector(state => state.auth.loading);
   const router = useRouter();
+  const { login, loading, error, clearError, isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace('/(tabs)');
+    }
+  }, [isAuthenticated, router]);
 
   // Validation des champs
   const isFormValid = 
@@ -295,34 +297,34 @@ export default function LoginScreen() {
       fontWeight: 'bold',
       fontFamily: 'Inter-Bold',
     },
+    errorContainer: {
+      width: '100%',
+      padding: 8,
+      marginBottom: 12,
+      backgroundColor: 'rgba(255, 0, 0, 0.1)',
+      borderRadius: 8,
+    },
+    errorText: {
+      color: COLORS.error,
+      textAlign: 'center',
+      fontSize: 14,
+      fontFamily: 'Inter',
+    },
   });
 
   const handleLogin = async () => {
     if (!validateEmail(email).isValid) {
-      setErrorState(t('auth.login.errors.emailInvalid'));
       return;
     }
 
     if (!validateLoginPassword(password).isValid) {
-      setErrorState(t('auth.login.errors.passwordRequired'));
       return;
     }
 
-    try {
-      dispatch(setLoading(true));
-      setErrorState(null);
-      const response = await loginApi(email, password);
-      dispatch(setCredentials({ 
-        user: response.user, 
-        accessToken: response.accessToken,
-        refreshToken: response.refreshToken
-      }));
-      router.replace('/(tabs)');
-    } catch (err) {
-      dispatch(setError(err instanceof Error ? err.message : 'An error occurred'));
-      setErrorState(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      dispatch(setLoading(false));
+    const success = await login(email, password);
+    if (!success) {
+      // L'erreur est déjà gérée par le hook
+      return;
     }
   };
 
@@ -384,9 +386,11 @@ export default function LoginScreen() {
                     />
                   </TouchableOpacity>
                 </View>
-                {error ? (
-                  <Text style={{ color: 'red', marginBottom: 8, textAlign: 'center' }}>{error}</Text>
-                ) : null}
+                {error && (
+                  <View style={styles.errorContainer}>
+                    <Text style={styles.errorText}>{error}</Text>
+                  </View>
+                )}
                 <TouchableOpacity 
                   style={styles.loginButton} 
                   onPress={handleLogin} 

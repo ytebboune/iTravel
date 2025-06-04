@@ -53,6 +53,8 @@ const bcrypt = __importStar(require("bcrypt"));
 const google_auth_library_1 = require("google-auth-library");
 const apple_auth_service_1 = require("./apple-auth.service");
 const ua_parser_js_1 = require("ua-parser-js");
+const client_1 = require("@prisma/client");
+const crypto = __importStar(require("crypto"));
 let AuthService = class AuthService {
     constructor(configService, jwtService, prisma, appleAuthService, tokenService, emailService) {
         this.configService = configService;
@@ -61,7 +63,89 @@ let AuthService = class AuthService {
         this.appleAuthService = appleAuthService;
         this.tokenService = tokenService;
         this.emailService = emailService;
+        this.MAX_ACTIVE_SESSIONS = 5;
         this.googleClient = new google_auth_library_1.OAuth2Client(this.configService.get('GOOGLE_CLIENT_ID'), this.configService.get('GOOGLE_CLIENT_SECRET'));
+    }
+    async generateAccessToken(user) {
+        const payload = {
+            sub: user.id,
+            email: user.email,
+            username: user.username,
+            avatar: user.avatar,
+            emailVerified: user.emailVerified,
+        };
+        return this.jwtService.signAsync(payload, {
+            secret: this.configService.get('JWT_ACCESS_SECRET'),
+            expiresIn: '15m',
+        });
+    }
+    async createRefreshToken(userId, device) {
+        const activeSessions = await this.prisma.refreshToken.count({
+            where: {
+                userId,
+                type: client_1.TokenType.REFRESH,
+                expiresAt: {
+                    gt: new Date(),
+                },
+            },
+        });
+        if (activeSessions >= this.MAX_ACTIVE_SESSIONS) {
+            const oldestSession = await this.prisma.refreshToken.findFirst({
+                where: {
+                    userId,
+                    type: client_1.TokenType.REFRESH,
+                },
+                orderBy: {
+                    createdAt: 'asc',
+                },
+            });
+            if (oldestSession) {
+                await this.prisma.refreshToken.delete({
+                    where: { id: oldestSession.id },
+                });
+            }
+        }
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7);
+        await this.prisma.refreshToken.create({
+            data: {
+                token,
+                type: client_1.TokenType.REFRESH,
+                user: {
+                    connect: { id: userId },
+                },
+                device,
+                expiresAt,
+            },
+        });
+        return token;
+    }
+    async generateTokens(user, device) {
+        const [accessToken, refreshToken] = await Promise.all([
+            this.generateAccessToken(user),
+            this.createRefreshToken(user.id, device),
+        ]);
+        return { accessToken, refreshToken };
+    }
+    async validateUser(email, password) {
+        try {
+            const user = await this.prisma.user.findUnique({
+                where: { email },
+            });
+            if (!user) {
+                return null;
+            }
+            const isPasswordValid = await bcrypt.compare(password, user.password);
+            if (!isPasswordValid) {
+                return null;
+            }
+            return user;
+        }
+        catch (error) {
+            console.error('Error validating user:', error);
+            throw new common_1.InternalServerErrorException('Erreur lors de la validation des identifiants');
+        }
     }
     async register(registerDto, userAgent) {
         const { email, username, password } = registerDto;
@@ -95,48 +179,53 @@ let AuthService = class AuthService {
         });
         const verificationToken = await this.tokenService.createVerificationToken(user.id);
         await this.emailService.sendVerificationEmail(email, verificationToken);
-        const { accessToken, refreshToken } = await this.generateTokens(user);
+        const tokens = await this.generateTokens({
+            id: user.id,
+            email: user.email,
+            username: user.username,
+            emailVerified: user.emailVerified,
+            avatar: user.avatar || '',
+        }, userAgent);
         return {
             user,
-            accessToken,
-            refreshToken,
+            ...tokens,
         };
     }
     async login(loginDto, userAgent) {
-        const { email, password } = loginDto;
-        const user = await this.prisma.user.findUnique({
-            where: { email },
-            select: {
-                id: true,
-                email: true,
-                username: true,
-                password: true,
-                emailVerified: true,
-                avatar: true,
-            },
-        });
-        if (!user) {
-            throw new common_1.UnauthorizedException('Invalid credentials');
-        }
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-        if (!isPasswordValid) {
-            throw new common_1.UnauthorizedException('Invalid credentials');
-        }
-        const parser = new ua_parser_js_1.UAParser(userAgent);
-        const deviceInfo = `${parser.getBrowser().name} on ${parser.getOS().name}`;
-        await this.emailService.sendNewLoginAlert(email, deviceInfo);
-        const { accessToken, refreshToken } = await this.generateTokens(user);
-        return {
-            user: {
+        try {
+            const { email, password } = loginDto;
+            const user = await this.validateUser(email, password);
+            if (!user) {
+                throw new common_1.UnauthorizedException('Invalid credentials');
+            }
+            const parser = new ua_parser_js_1.UAParser(userAgent);
+            const deviceInfo = `${parser.getBrowser().name} on ${parser.getOS().name}`;
+            await this.emailService.sendNewLoginAlert(email, deviceInfo);
+            const tokens = await this.generateTokens({
                 id: user.id,
                 email: user.email,
                 username: user.username,
                 emailVerified: user.emailVerified,
-                avatar: user.avatar,
-            },
-            accessToken,
-            refreshToken,
-        };
+                avatar: user.avatar || '',
+            }, deviceInfo);
+            return {
+                user: {
+                    id: user.id,
+                    email: user.email,
+                    username: user.username,
+                    emailVerified: user.emailVerified,
+                    avatar: user.avatar,
+                },
+                ...tokens,
+            };
+        }
+        catch (error) {
+            console.error('Login error:', error);
+            if (error instanceof common_1.UnauthorizedException) {
+                throw error;
+            }
+            throw new common_1.InternalServerErrorException('Une erreur est survenue lors de la connexion');
+        }
     }
     async verifyEmail(token) {
         const isValid = await this.tokenService.verifyEmailToken(token);
@@ -169,40 +258,69 @@ let AuthService = class AuthService {
         await this.tokenService.deleteAllUserRefreshTokens(userId);
         return { message: 'Password reset successfully' };
     }
-    async refreshToken(refreshToken) {
-        const userId = await this.tokenService.verifyRefreshToken(refreshToken);
-        if (!userId) {
+    async refreshToken(refreshToken, userAgent) {
+        const storedToken = await this.prisma.refreshToken.findUnique({
+            where: { token: refreshToken },
+            include: { user: true },
+        });
+        if (!storedToken || storedToken.expiresAt < new Date() || storedToken.type !== client_1.TokenType.REFRESH) {
             throw new common_1.UnauthorizedException('Invalid refresh token');
         }
-        const user = await this.prisma.user.findUnique({
-            where: { id: userId },
+        const parser = new ua_parser_js_1.UAParser(userAgent);
+        const deviceInfo = `${parser.getBrowser().name} on ${parser.getOS().name}`;
+        const tokens = await this.generateTokens({
+            id: storedToken.user.id,
+            email: storedToken.user.email,
+            username: storedToken.user.username,
+            emailVerified: storedToken.user.emailVerified,
+            avatar: storedToken.user.avatar || '',
+        }, deviceInfo);
+        await this.prisma.refreshToken.delete({
+            where: { id: storedToken.id },
         });
-        if (!user) {
-            throw new common_1.UnauthorizedException('User not found');
-        }
-        await this.tokenService.deleteRefreshToken(refreshToken);
-        const tokens = await this.generateTokens(user);
-        return tokens;
+        return {
+            user: {
+                id: storedToken.user.id,
+                email: storedToken.user.email,
+                username: storedToken.user.username,
+                emailVerified: storedToken.user.emailVerified,
+                avatar: storedToken.user.avatar,
+            },
+            ...tokens,
+        };
     }
     async logout(refreshToken) {
-        await this.tokenService.deleteRefreshToken(refreshToken);
-        return { message: 'Logged out successfully' };
+        await this.prisma.refreshToken.delete({
+            where: { token: refreshToken },
+        });
     }
     async logoutAllDevices(userId) {
-        await this.tokenService.deleteAllUserRefreshTokens(userId);
-        return { message: 'Logged out from all devices' };
-    }
-    async generateTokens(user) {
-        const accessToken = this.jwtService.sign({
-            sub: user.id,
-            email: user.email,
-            username: user.username,
-        }, {
-            secret: this.configService.get('JWT_SECRET'),
-            expiresIn: '15m',
+        await this.prisma.refreshToken.deleteMany({
+            where: {
+                userId,
+                type: client_1.TokenType.REFRESH,
+            },
         });
-        const refreshToken = await this.tokenService.createRefreshToken(user.id, 'web');
-        return { accessToken, refreshToken };
+    }
+    async getActiveSessions(userId) {
+        return this.prisma.refreshToken.findMany({
+            where: {
+                userId,
+                type: client_1.TokenType.REFRESH,
+                expiresAt: {
+                    gt: new Date(),
+                },
+            },
+            select: {
+                id: true,
+                device: true,
+                createdAt: true,
+                expiresAt: true,
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
+        });
     }
     async googleAuth(token) {
         try {
@@ -254,7 +372,7 @@ let AuthService = class AuthService {
                     },
                 });
             }
-            const tokens = await this.generateTokens(user);
+            const tokens = await this.generateTokens(user, 'Google');
             return {
                 user,
                 ...tokens,
@@ -324,20 +442,12 @@ let AuthService = class AuthService {
     }
     async verifyToken(token) {
         try {
-            const decoded = this.jwtService.verify(token);
-            const user = await this.prisma.user.findUnique({
-                where: { id: decoded.sub },
+            const payload = this.jwtService.verify(token, {
+                secret: this.configService.get('JWT_SECRET'),
             });
-            if (!user) {
-                throw new common_1.UnauthorizedException('User not found');
-            }
-            return {
-                sub: user.id,
-                email: user.email,
-                username: user.username,
-            };
+            return payload;
         }
-        catch {
+        catch (error) {
             throw new common_1.UnauthorizedException('Invalid token');
         }
     }

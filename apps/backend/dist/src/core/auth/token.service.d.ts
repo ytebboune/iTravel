@@ -11,8 +11,9 @@ export declare class TokenService {
     verifyEmailToken(token: string): Promise<boolean>;
     verifyPasswordResetToken(token: string): Promise<string | null>;
     deletePasswordResetToken(token: string): Promise<void>;
-    createRefreshToken(userId: string, device: string): Promise<string>;
+    createRefreshToken(userId: string, device: string, days?: number): Promise<string>;
     verifyRefreshToken(token: string): Promise<string | null>;
     deleteRefreshToken(token: string): Promise<void>;
     deleteAllUserRefreshTokens(userId: string): Promise<void>;
+    deleteExpiredTokens(): Promise<void>;
 }

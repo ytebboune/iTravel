@@ -1,14 +1,14 @@
 import { Stack } from 'expo-router';
 import { useEffect } from 'react';
 import { router } from 'expo-router';
-import { getAccessToken } from '../../services/authService';
+import { getAuthData } from '../../services/secureStorage';
 
 export default function MainLayout() {
   // Vérifier si l'utilisateur est connecté
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const accessToken = await getAccessToken();
+        const { accessToken } = await getAuthData();
         if (!accessToken) {
           console.log('No access token found, redirecting to login');
           router.replace('/(auth)/login');

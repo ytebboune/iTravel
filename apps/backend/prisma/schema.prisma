@@ -738,28 +738,28 @@ model PasswordResetToken {
   @@map("password_reset_tokens")
 }
 
-/// Token de rafraîchissement
-model RefreshToken {
-  id        String   @id @default(uuid())
-  token     String   @unique
-  userId    String
-  type      TokenType
-  device    String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  // Relations
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@map("refresh_tokens")
-}
-
 /// Types de token
 enum TokenType {
+  REFRESH          @map("refresh")
   EMAIL_VERIFICATION @map("email_verification")
   PASSWORD_RESET    @map("password_reset")
-  REFRESH          @map("refresh")
+}
+
+/// Token de rafraîchissement
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  type      TokenType
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device    String?
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  lastUsed  DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
 }
 
 model StoryView {

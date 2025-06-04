@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Stack } from 'expo-router'
 import { ThemeProvider } from '../providers/theme-provider'
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter'
@@ -10,8 +10,23 @@ import { Provider } from 'react-redux'
 import { PersistGate } from 'redux-persist/integration/react'
 import { store, persistor } from '../store/store'
 import { useAppSelector } from '@/store/hooks'
-import { router, useSegments, usePathname } from 'expo-router'
-import { Platform } from 'react-native'
+import { router, useSegments } from 'expo-router'
+import { Platform, View, ActivityIndicator } from 'react-native'
+import { AuthInitializer } from '../components/AuthInitializer'
+import { getAuthData } from '../services/secureStorage'
+
+function LoadingScreen() {
+  return (
+    <View style={{ 
+      flex: 1, 
+      justifyContent: 'center', 
+      alignItems: 'center',
+      backgroundColor: '#ffffff'
+    }}>
+      <ActivityIndicator size="large" color="#0000ff" />
+    </View>
+  );
+}
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -40,6 +55,7 @@ export default function RootLayout() {
   return (
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
+        <AuthInitializer />
         <AuthOrApp />
       </PersistGate>
     </Provider>
@@ -48,34 +64,70 @@ export default function RootLayout() {
 
 function AuthOrApp() {
   const isAuthenticated = useAppSelector(state => state.auth.isAuthenticated);
-  const pathname = usePathname();
+  const isLoading = useAppSelector(state => state.auth.loading);
+  const segments = useSegments();
+  const [isNavigating, setIsNavigating] = useState(false);
 
-  // Corriger la détection des routes d'auth pour Expo Router web
-  const isAuthRoute =
-    pathname === '/login' ||
-    pathname === '/register' ||
-    pathname === '/forgot-password' ||
-    pathname === '/reset-password' ||
-    pathname.startsWith('/(auth)');
-
-  console.log('AuthOrApp:', { isAuthenticated, pathname, isAuthRoute });
+  const handleNavigation = useCallback(async (targetPath: string) => {
+    if (isNavigating) return;
+    
+    try {
+      console.log('Navigating to:', targetPath);
+      setIsNavigating(true);
+      await router.replace(targetPath);
+    } catch (error) {
+      console.error('Navigation error:', error);
+    } finally {
+      setIsNavigating(false);
+    }
+  }, [isNavigating]);
 
   useEffect(() => {
-    if (!isAuthenticated && !isAuthRoute) {
-      router.replace('/(auth)/login');
-    }
-  }, [isAuthenticated, isAuthRoute]);
+    if (isLoading) return;
 
-  if (!isAuthenticated && !isAuthRoute) {
-    return null;
+    const checkAuth = async () => {
+      try {
+        const { accessToken } = await getAuthData();
+        const isRootPath = segments.length === 0;
+
+        // Ne rediriger que si on est sur la route racine
+        if (isRootPath) {
+          if (accessToken) {
+            handleNavigation('/(tabs)');
+          } else {
+            handleNavigation('/(auth)/login');
+          }
+        }
+      } catch (error) {
+        console.error('Error checking auth status:', error);
+      }
+    };
+
+    checkAuth();
+  }, [isAuthenticated, segments, isLoading, handleNavigation]);
+
+  if (isLoading) {
+    return <LoadingScreen />;
   }
 
   return (
     <LanguageProvider>
       <ThemeProvider>
         <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-          <Stack.Screen name="(main)" options={{ headerShown: false }} />
+          <Stack.Screen 
+            name="(auth)" 
+            options={{ 
+              headerShown: false,
+              animation: 'none'
+            }} 
+          />
+          <Stack.Screen 
+            name="(tabs)" 
+            options={{ 
+              headerShown: false,
+              animation: 'none'
+            }} 
+          />
         </Stack>
       </ThemeProvider>
     </LanguageProvider>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { logout } from '../../services/authService';
+import { authService } from '../../services/auth.service';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '@/providers/LanguageProvider';
 import { LanguageSelector } from '@/components/LanguageSelector';
@@ -11,8 +11,12 @@ export default function Home() {
   const { t } = useTranslation();
 
   const handleLogout = async () => {
-    await logout();
-    router.replace('/(auth)/login');
+    try {
+      await authService.logout();
+      router.replace('/(auth)/login');
+    } catch (error) {
+      // ... error handling ...
+    }
   };
 
   return (

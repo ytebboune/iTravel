@@ -1,12 +1,13 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform, KeyboardAvoidingView, useWindowDimensions, Image } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { AuthHeader, AuthDivider } from './_layout';
 import COLORS from '../../theme/colors';
-import { resetPassword } from '../../services/authService';
+import { authService } from '../../services/auth.service';
 import { useTranslation } from 'react-i18next';
 import { LanguageSelector } from '@/components/LanguageSelector';
 import { getAuthBackgroundImage } from '../../utils/getAuthBackgroundImage';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function ResetPasswordScreen() {
   const { t } = useTranslation();
@@ -21,6 +22,13 @@ export default function ResetPasswordScreen() {
   const params = useLocalSearchParams();
   const token = params.token as string;
   const confirmPasswordRef = useRef<TextInput | null>(null);
+  const { isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace('/(tabs)');
+    }
+  }, [isAuthenticated, router]);
 
   const isDesktopStandard = windowWidth >= 1280;
 
@@ -140,16 +148,8 @@ export default function ResetPasswordScreen() {
     }
     setLoading(true);
     try {
-      const res = await resetPassword(token, password);
-      console.log('Reset password response:', res);
-      console.log('Response status:', res.status);
-      console.log('Response ok:', res.ok);
-      if (res.status === 200 || res.status === 201 || res.status === 204) {
-        setSuccess(true);
-      } else {
-        console.error('Unexpected status:', res.status);
-        setError(t('auth.reset.error') || 'Erreur lors de la réinitialisation.');
-      }
+      await authService.resetPassword(token, password);
+      setSuccess(true);
     } catch (e) {
       console.error('Reset password error:', e);
       setError(t('auth.reset.error') || 'Erreur lors de la réinitialisation.');

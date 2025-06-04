@@ -1,31 +1,11 @@
-import { AuthService } from './auth.service';
+import { AuthService, AuthResponse } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 export declare class AuthController {
     private readonly authService;
     constructor(authService: AuthService);
-    register(registerDto: RegisterDto, userAgent: string): Promise<{
-        user: {
-            id: string;
-            email: string;
-            username: string;
-            avatar: string;
-            emailVerified: boolean;
-        };
-        accessToken: string;
-        refreshToken: string;
-    }>;
-    login(loginDto: LoginDto, userAgent: string): Promise<{
-        user: {
-            id: string;
-            email: string;
-            username: string;
-            emailVerified: boolean;
-            avatar: string;
-        };
-        accessToken: string;
-        refreshToken: string;
-    }>;
+    register(registerDto: RegisterDto, userAgent: string): Promise<AuthResponse>;
+    login(loginDto: LoginDto, userAgent: string): Promise<AuthResponse>;
     googleAuth(token: string): Promise<{
         accessToken: string;
         refreshToken: string;
@@ -55,10 +35,7 @@ export declare class AuthController {
     resetPassword(token: string, newPassword: string): Promise<{
         message: string;
     }>;
-    refreshToken(refreshToken: string): Promise<{
-        accessToken: string;
-        refreshToken: string;
-    }>;
+    refreshToken(refreshToken: string, userAgent: string): Promise<AuthResponse>;
     logout(refreshToken: string): Promise<{
         message: string;
     }>;
@@ -66,4 +43,8 @@ export declare class AuthController {
         message: string;
     }>;
     getMe(req: any): Promise<any>;
+    verifyToken(req: any): Promise<{
+        valid: boolean;
+        user: any;
+    }>;
 }

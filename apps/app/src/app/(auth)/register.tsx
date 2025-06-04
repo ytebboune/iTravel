@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import { View, Text, Image, TextInput, TouchableOpacity, StyleSheet, Dimensions, KeyboardAvoidingView, Platform, ScrollView, useWindowDimensions } from 'react-native';
 import { Link } from 'expo-router';
 import { Ionicons, AntDesign } from '@expo/vector-icons';
@@ -7,12 +7,10 @@ import COLORS from '../../theme/colors';
 import { AuthHeader, AuthDivider } from './_layout';
 import { getAuthBackgroundImage } from '../../utils/getAuthBackgroundImage';
 import { useRouter } from 'expo-router';
-import { register as registerApi } from '../../services/authService';
 import { validateEmail, validatePassword, validateConfirmPassword } from '@/utils/validation';
 import { useTranslation } from 'react-i18next';
 import { LanguageSelector } from '@/components/LanguageSelector';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { setCredentials, setLoading, setError } from '@/store/authSlice';
+import { useAuth } from '@/hooks/useAuth';
 
 const { width, height } = Dimensions.get('window');
 
@@ -25,11 +23,16 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setErrorState] = useState<string | null>(null);
-  const loading = useAppSelector(state => state.auth.loading);
+  const [errorState, setErrorState] = useState<string | null>(null);
   const router = useRouter();
   const { t } = useTranslation();
-  const dispatch = useAppDispatch();
+  const { register, loading, error, clearError, isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace('/(tabs)');
+    }
+  }, [isAuthenticated, router]);
 
   const isDesktopStandard = windowWidth >= 1280;
 
@@ -50,6 +53,7 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     setErrorState(null);
+    clearError();
     
     const emailValidation = validateEmail(email);
     if (!emailValidation.isValid) {
@@ -69,21 +73,15 @@ export default function RegisterScreen() {
       return;
     }
 
-    try {
-      dispatch(setLoading(true));
-      const response = await registerApi(username, email, password);
-      dispatch(setCredentials({ 
-        user: response.user, 
-        accessToken: response.accessToken,
-        refreshToken: response.refreshToken
-      }));
-      router.replace('/(tabs)');
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
-      dispatch(setError(errorMessage));
-      setErrorState(errorMessage);
-    } finally {
-      dispatch(setLoading(false));
+    const success = await register({
+      email,
+      password,
+      username: username,
+    });
+
+    if (!success) {
+      setErrorState(error);
+      return;
     }
   };
 
@@ -243,6 +241,19 @@ export default function RegisterScreen() {
       borderRadius: 3,
       backgroundColor: '#ccc',
       opacity: 0.6,
+    },
+    errorContainer: {
+      width: '100%',
+      padding: 8,
+      marginBottom: 12,
+      backgroundColor: 'rgba(255, 0, 0, 0.1)',
+      borderRadius: 8,
+    },
+    errorText: {
+      color: '#FF3B30',
+      textAlign: 'center',
+      fontSize: 14,
+      fontFamily: 'Inter',
     },
   });
 
@@ -442,9 +453,11 @@ export default function RegisterScreen() {
                 </View>
               </>
             )}
-            {error ? (
-              <Text style={{ color: 'red', marginBottom: 8, textAlign: 'center' }}>{error}</Text>
-            ) : null}
+            {errorState && (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{errorState}</Text>
+              </View>
+            )}
             <TouchableOpacity 
               style={styles.loginButton} 
               onPress={handleRegister} 

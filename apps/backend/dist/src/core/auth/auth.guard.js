@@ -12,25 +12,41 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthGuard = void 0;
 const common_1 = require("@nestjs/common");
 const auth_service_1 = require("./auth.service");
+const core_1 = require("@nestjs/core");
+const public_decorator_1 = require("../decorators/public.decorator");
 let AuthGuard = class AuthGuard {
-    constructor(authService) {
+    constructor(authService, reflector) {
         this.authService = authService;
+        this.reflector = reflector;
     }
     async canActivate(context) {
+        const isPublic = this.reflector.getAllAndOverride(public_decorator_1.IS_PUBLIC_KEY, [
+            context.getHandler(),
+            context.getClass(),
+        ]);
+        if (isPublic) {
+            return true;
+        }
         const request = context.switchToHttp().getRequest();
         const authHeader = request.headers['authorization'];
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
             throw new common_1.UnauthorizedException('No auth token');
         }
-        const token = authHeader.split(' ')[1];
-        const user = await this.authService.verifyToken(token);
-        request.user = user;
-        return true;
+        try {
+            const token = authHeader.split(' ')[1];
+            const user = await this.authService.verifyToken(token);
+            request.user = user;
+            return true;
+        }
+        catch (error) {
+            throw new common_1.UnauthorizedException('Invalid token');
+        }
     }
 };
 exports.AuthGuard = AuthGuard;
 exports.AuthGuard = AuthGuard = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [auth_service_1.AuthService])
+    __metadata("design:paramtypes", [auth_service_1.AuthService,
+        core_1.Reflector])
 ], AuthGuard);
 //# sourceMappingURL=auth.guard.js.map

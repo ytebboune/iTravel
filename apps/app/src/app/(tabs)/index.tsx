@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions, Platform, FlatList, TextInput, Modal, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { logout } from '@/services/authService';
+import { authService } from '../../services/auth.service';
 import { useRouter } from 'expo-router';
 import COLORS from '@/theme/colors';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -244,7 +244,7 @@ export default function HomeScreen() {
 
   const handleLogout = async () => {
     try {
-      await logout();
+      await authService.logout();
       router.replace('/(auth)/login');
     } catch (error) {
       console.error('Logout error:', error);
